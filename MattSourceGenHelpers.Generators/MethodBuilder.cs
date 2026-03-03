@@ -1,4 +1,6 @@
-﻿namespace MattSourceGenHelpers.Abstractions;
+using MattSourceGenHelpers.Abstractions;
+
+namespace MattSourceGenHelpers.Generators;
 
 public class MethodBuilder(IGeneratorsFactory generatorsFactory) : IMethodBuilder
 {

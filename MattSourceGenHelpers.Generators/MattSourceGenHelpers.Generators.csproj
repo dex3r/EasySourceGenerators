@@ -22,4 +22,9 @@
     <ItemGroup>
       <ProjectReference Include="..\MattSourceGenHelpers.Abstractions\MattSourceGenHelpers.Abstractions.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="MethodBuilder.cs" LogicalName="$(RootNamespace).MethodBuilder.cs" />
+      <EmbeddedResource Include="RecordingGeneratorsFactory.cs" LogicalName="$(RootNamespace).RecordingGeneratorsFactory.cs" />
+    </ItemGroup>
 </Project>
