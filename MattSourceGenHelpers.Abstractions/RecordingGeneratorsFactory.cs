@@ -22,6 +22,8 @@ public class RecordingGeneratorsFactory : IGeneratorsFactory
         return new RecordingMethodImplementationGenerator();
     }
 
+    public IMethodBuilder ForMethod() => new MethodBuilder(this);
+
     public IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>()
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
