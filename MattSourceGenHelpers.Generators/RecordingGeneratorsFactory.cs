@@ -1,12 +1,13 @@
-using JetBrains.Annotations;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using MattSourceGenHelpers.Abstractions;
 
-namespace MattSourceGenHelpers.Abstractions;
+namespace MattSourceGenHelpers.Generators;
 
 public class SwitchBodyRecord
 {
-    [UsedImplicitly]
     public List<object> CaseKeys { get; } = new();
-    [UsedImplicitly]
     public List<object?> CaseValues { get; } = new();
     public bool HasDefaultCase { get; set; }
 }

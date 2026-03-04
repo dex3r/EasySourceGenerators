@@ -135,10 +135,10 @@ internal static class GeneratesMethodExecutionRuntime
             }
             
             Type? generatorStaticType = abstractionsAssembly.GetType(Consts.GenerateTypeFullName);
-            Type? recordingFactoryType = abstractionsAssembly.GetType(Consts.RecordingGeneratorsFactoryTypeFullName);
+            Type? recordingFactoryType = assembly.GetType(Consts.RecordingGeneratorsFactoryTypeFullName);
             if (generatorStaticType == null || recordingFactoryType == null)
             {
-                return (null, $"Could not find {Consts.GenerateTypeFullName} or {Consts.RecordingGeneratorsFactoryTypeFullName} types in Abstractions assembly");
+                return (null, $"Could not find {Consts.GenerateTypeFullName} or {Consts.RecordingGeneratorsFactoryTypeFullName} types in compiled assembly");
             }
 
             object? recordingFactory = Activator.CreateInstance(recordingFactoryType);
@@ -339,12 +339,26 @@ internal static class GeneratesMethodExecutionRuntime
         Compilation compilation)
     {
         string dummySource = BuildDummyImplementation(allPartialMethods);
+        string methodBuilderSource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.MethodBuilder.cs");
+        string recordingFactorySource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.RecordingGeneratorsFactory.cs");
         CSharpParseOptions parseOptions = compilation.SyntaxTrees.FirstOrDefault()?.Options as CSharpParseOptions
                                          ?? CSharpParseOptions.Default;
 
         return (CSharpCompilation)compilation
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddSyntaxTrees(CSharpSyntaxTree.ParseText(dummySource, parseOptions));
+            .AddSyntaxTrees(
+                CSharpSyntaxTree.ParseText(dummySource, parseOptions),
+                CSharpSyntaxTree.ParseText(methodBuilderSource, parseOptions),
+                CSharpSyntaxTree.ParseText(recordingFactorySource, parseOptions));
+    }
+
+    private static string ReadEmbeddedResource(string resourceName)
+    {
+        using Stream? stream = typeof(GeneratesMethodExecutionRuntime).Assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+            throw new InvalidOperationException($"Embedded resource '{resourceName}' not found in {Consts.GeneratorsAssemblyName} assembly");
+        using StreamReader reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     private static string BuildDummyImplementation(IEnumerable<IMethodSymbol> partialMethods)

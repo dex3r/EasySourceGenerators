@@ -16,6 +16,10 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
+   
+    <ItemGroup>
+         <None Include="..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
     
     <ItemGroup>
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
@@ -26,6 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Include="..\README.md" Pack="true" PackagePath="\" />
+      <EmbeddedResource Include="MethodBuilder.cs" LogicalName="$(RootNamespace).MethodBuilder.cs" />
+      <EmbeddedResource Include="RecordingGeneratorsFactory.cs" LogicalName="$(RootNamespace).RecordingGeneratorsFactory.cs" />
     </ItemGroup>
 </Project>
