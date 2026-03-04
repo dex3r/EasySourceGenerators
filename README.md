@@ -113,14 +113,14 @@ See the full example project here: [`/EasySourceGenerators.Examples`](./EasySour
 
 ## What it does
 
-You declare partial methods and provide generator methods marked with attributes such as:
+You declare partial methods, both static and non-static, and provide generator methods marked with attributes such as:
 - `[GeneratesMethod(...)]`
 - `[SwitchCase(...)]`
 - `[SwitchDefault]`
 
-The generator uses Roslyn Source Generators under the hood to generate the source in build time.
+The generator uses Roslyn Source Generators under the hood to generate the source at build time.
 
-The Generators package and binaries is not going to be added to your shipped code. The generators package will be added as a compile-time only dependency:
+The Generators package and its binaries will not be included in your shipped code. The generators package will be added as a compile-time only dependency:
 
 ```xml
   <PackageReference Include="EasySourceGenerators.Generators" Version="x.y.z"
