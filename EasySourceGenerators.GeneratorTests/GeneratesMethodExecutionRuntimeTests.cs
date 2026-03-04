@@ -199,11 +199,11 @@ public class GeneratesMethodExecutionRuntimeTests
         Assert.That(result.error, Does.StartWith("Compilation failed:"));
     }
 
-    private static CSharpCompilation CreateCompilation(string source)
+    private static CSharpCompilation CreateCompilation(string source, string assemblyName = "TestAssembly")
     {
         SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
         CSharpCompilation compilation = CSharpCompilation.Create(
-            assemblyName: Guid.NewGuid().ToString("N"),
+            assemblyName: assemblyName,
             syntaxTrees: new[] { syntaxTree },
             references: GetMetadataReferences(),
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
@@ -234,9 +234,11 @@ public class GeneratesMethodExecutionRuntimeTests
                 }
                 catch (FileNotFoundException)
                 {
+                    // Ignore transient runtime assemblies that are not backed by files.
                 }
                 catch (BadImageFormatException)
                 {
+                    // Ignore entries that are not valid .NET assemblies.
                 }
             }
         }

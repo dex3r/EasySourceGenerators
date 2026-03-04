@@ -13,8 +13,11 @@ public class MethodBuilderTests
         MethodBuilder builder = new MethodBuilder(factory);
 
         IMethodBuilder<int> result = builder.WithParameter<int>();
+        IMethodImplementationGenerator<int, string> implementation = result.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MethodBuilder<int>>());
+        Assert.That(implementation, Is.TypeOf<TrackingArgImplementationGenerator<int, string>>());
+        Assert.That(factory.ArgCreateImplementationCalls, Is.EqualTo(1));
     }
 
     [Test]
