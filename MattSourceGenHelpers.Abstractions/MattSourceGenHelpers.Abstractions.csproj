@@ -4,11 +4,23 @@
         <LangVersion>default</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Version>0.1.0</Version>
+        <Title>Matt Source Generation Helpers Abstractions</Title>
+        <Description>Attributes and fluent abstractions used by MattSourceGenHelpers source generators.</Description>
+        <Authors>Matt Krzaczek</Authors>
+        <PackageProjectUrl>https://github.com/dex3r/MattSourceGenHelpers</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/dex3r/MattSourceGenHelpers</RepositoryUrl>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>
