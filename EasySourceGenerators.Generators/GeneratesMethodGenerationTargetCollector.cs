@@ -85,9 +85,11 @@ internal static class GeneratesMethodGenerationTargetCollector
 
             if (partialMethodSymbol is null)
             {
+                Location? attributeLocation = attribute.ApplicationSyntaxReference?.GetSyntax().GetLocation();
+                
                 context.ReportDiagnostic(Diagnostic.Create(
                     GeneratesMethodGeneratorDiagnostics.MissingPartialMethodError,
-                    generatorMethod.GetLocation(),
+                    attributeLocation ?? generatorMethod.GetLocation(),
                     targetMethodName,
                     containingType.Name));
                 continue;
