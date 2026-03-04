@@ -138,7 +138,7 @@ You can browse the generated code live in the `IL Viewer` window of your IDE:
 
 ## Verbose and easy to understand errors
 
-Remove the guesswork from Source Generators mistakes.
+Remove the guesswork from Source Generators.
 
 Roslyn Source Generator projects often produce errors that are hard to understand. One of the main goals of this package is to make sure that any error - whether it’s a user mistake, a setup problem, or an edge case - shows up clearly in your IDE by highlighting the line that caused it.
 
