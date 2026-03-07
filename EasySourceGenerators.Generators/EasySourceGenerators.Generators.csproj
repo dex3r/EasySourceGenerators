@@ -5,18 +5,19 @@
         <LangVersion>default</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Deterministic>true</Deterministic>
 
         <IsRoslynAnalyzer>true</IsRoslynAnalyzer>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        
+        <!-- Roslyn’s generator cookbook says to set IncludeBuildOutput to false so the generator is not included as a normal lib dependency, and then pack the DLL manually into analyzers/dotnet/cs -->
         <IncludeBuildOutput>false</IncludeBuildOutput>
-
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-        <Version>0.1.1-alpha</Version>
         <PackageId>EasySourceGenerators</PackageId>
+        <Version>0.1.1-alpha</Version>
         <Title>Easy Source Generators</Title>
         <Description>Source Generators made easy. Write code that generates code without learning Roslyn Source Generators. Simply write regular code, this package will do the hard work for you.</Description>
         <Authors>Matt Krzaczek</Authors>
@@ -26,10 +27,7 @@
         <RepositoryType>git</RepositoryType>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-
-        <Deterministic>true</Deterministic>
-        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-        <PackageTags>roslyn;source-generator;analyzer;codegen</PackageTags>
+        <PackageTags>roslyn;source-generator;analyzer;codegen;source-generators;incremental-generator;easy-source-generators;easy-source-generator</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -48,7 +46,8 @@
         <None Include="$(OutputPath)$(AssemblyName).dll"
               Pack="true"
               PackagePath="analyzers/dotnet/cs"
-              Visible="false"/>
+              Visible="false"
+              Condition="Exists('$(TargetPath)')" />
 
         <None Include="$(OutputPath)$(AssemblyName).pdb"
               Pack="true"
