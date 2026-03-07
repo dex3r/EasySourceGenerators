@@ -26,6 +26,10 @@
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageTags>roslyn;source-generator;analyzer;codegen;source-generators;incremental-generator;easy-source-generators;easy-source-generator</PackageTags>
+
+        <TargetsForTfmSpecificContentInPackage>
+            $(TargetsForTfmSpecificContentInPackage);AddAnalyzerToPackage
+        </TargetsForTfmSpecificContentInPackage>
     </PropertyGroup>
 
     <ItemGroup>
@@ -40,19 +44,19 @@
         <ProjectReference Include="..\EasySourceGenerators.Abstractions\EasySourceGenerators.Abstractions.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Include="$(OutputPath)$(AssemblyName).dll"
-              Pack="true"
-              PackagePath="analyzers/dotnet/cs"
-              Visible="false"
-              Condition="Exists('$(TargetPath)')" />
+    <Target Name="AddAnalyzerToPackage"
+            Condition="'$(TargetFramework)' == 'net8.0'">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="$(TargetPath)">
+                <PackagePath>analyzers/dotnet/cs</PackagePath>
+            </TfmSpecificPackageFile>
 
-        <None Include="$(OutputPath)$(AssemblyName).pdb"
-              Pack="true"
-              PackagePath="analyzers/dotnet/cs"
-              Visible="false"
-              Condition="Exists('$(OutputPath)$(AssemblyName).pdb')"/>
-    </ItemGroup>
+            <TfmSpecificPackageFile Include="$(TargetDir)$(AssemblyName).pdb"
+                                    Condition="Exists('$(TargetDir)$(AssemblyName).pdb')">
+                <PackagePath>analyzers/dotnet/cs</PackagePath>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <EmbeddedResource Include="MethodBuilder.cs" LogicalName="$(RootNamespace).MethodBuilder.cs"/>
