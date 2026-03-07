@@ -23,7 +23,7 @@ public class SimpleMethodWithParameterTests
 
                               partial class SimpleMethodWithParameterClass
                               {
-                                  public partial string SimpleMethodWithParameter()
+                                  public partial int SimpleMethodWithParameter(int someIntParameter)
                                   {
                                       return 5;
                                   }

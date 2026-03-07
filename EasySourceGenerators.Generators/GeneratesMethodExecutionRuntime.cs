@@ -273,13 +273,43 @@ internal static class GeneratesMethodExecutionRuntime
 
     private static object?[]? ConvertArguments(object?[]? args, MethodInfo methodInfo)
     {
-        if (args == null || methodInfo.GetParameters().Length == 0)
+        ParameterInfo[] parameters = methodInfo.GetParameters();
+        if (parameters.Length == 0)
         {
             return null;
         }
 
-        Type parameterType = methodInfo.GetParameters()[0].ParameterType;
-        return new[] { Convert.ChangeType(args[0], parameterType) };
+        if (args != null && args.Length > parameters.Length)
+        {
+            throw new TargetParameterCountException();
+        }
+
+        object?[] convertedArguments = new object?[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            ParameterInfo parameter = parameters[i];
+            object? argument = args != null && i < args.Length ? args[i] : null;
+            if (argument == null)
+            {
+                convertedArguments[i] = GetDefaultValue(parameter.ParameterType);
+                continue;
+            }
+
+            Type targetType = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
+            convertedArguments[i] = Convert.ChangeType(argument, targetType);
+        }
+
+        return convertedArguments;
+    }
+
+    private static object? GetDefaultValue(Type type)
+    {
+        if (!type.IsValueType || Nullable.GetUnderlyingType(type) != null)
+        {
+            return null;
+        }
+
+        return Activator.CreateInstance(type);
     }
 
     private static SwitchBodyData ExtractSwitchBodyData(object lastRecord, ITypeSymbol returnType)

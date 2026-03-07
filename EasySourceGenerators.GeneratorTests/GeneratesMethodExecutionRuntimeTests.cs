@@ -91,6 +91,33 @@ public class GeneratesMethodExecutionRuntimeTests
     }
 
     [Test]
+    public void ExecuteSimpleGeneratorMethod_ExecutesStaticMethodWithParametersUsingDefaultValues()
+    {
+        CSharpCompilation compilation = CreateCompilation("""
+                                                         namespace TestNamespace;
+
+                                                         public partial class Target
+                                                         {
+                                                             public partial int GetValue(int input);
+                                                         }
+
+                                                         public static class GenHost
+                                                         {
+                                                             public static int Generate(int input) => input + 5;
+                                                         }
+                                                         """);
+
+        IMethodSymbol generatorMethod = GetMethodSymbol(compilation, "TestNamespace.GenHost", "Generate");
+        IMethodSymbol partialMethod = GetMethodSymbol(compilation, "TestNamespace.Target", "GetValue");
+
+        (string? value, string? error) result =
+            GeneratesMethodExecutionRuntime.ExecuteSimpleGeneratorMethod(generatorMethod, partialMethod, compilation);
+
+        Assert.That(result.error, Is.Null);
+        Assert.That(result.value, Is.EqualTo("5"));
+    }
+
+    [Test]
     public void ExecuteGeneratorMethodWithArgs_ConvertsArgumentsToMethodParameterType()
     {
         CSharpCompilation compilation = CreateCompilation("""
