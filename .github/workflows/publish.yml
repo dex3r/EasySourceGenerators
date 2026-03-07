@@ -72,13 +72,13 @@ jobs:
           user: dex3r
 
       - name: Publish Abstractions package
-        run: dotnet nuget push ./artifacts/EasySourceGenerators.Abstractions.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push ./artifacts/EasySourceGenerators.Abstractions.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --no-symbols
 
       - name: Publish Abstractions symbols package
         run: dotnet nuget push ./artifacts/EasySourceGenerators.Abstractions.*.snupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
 
       - name: Publish Generators package
-        run: dotnet nuget push ./artifacts/EasySourceGenerators.Generators.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: dotnet nuget push ./artifacts/EasySourceGenerators.Generators.*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --no-symbols
 
       - name: Publish Generators symbols package
         run: dotnet nuget push ./artifacts/EasySourceGenerators.Generators.*.snupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
