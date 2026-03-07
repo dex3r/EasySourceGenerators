@@ -17,7 +17,7 @@
         <PackageProjectUrl>https://github.com/dex3r/EasySourceGenerators</PackageProjectUrl>
         <RepositoryUrl>https://github.com/dex3r/EasySourceGenerators</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     </PropertyGroup>
    
     <ItemGroup>
