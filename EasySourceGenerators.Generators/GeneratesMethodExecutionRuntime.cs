@@ -285,18 +285,18 @@ internal static class GeneratesMethodExecutionRuntime
         }
 
         object?[] convertedArguments = new object?[parameters.Length];
-        for (int i = 0; i < parameters.Length; i++)
+        for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
         {
-            ParameterInfo parameter = parameters[i];
-            object? argument = args != null && i < args.Length ? args[i] : null;
+            ParameterInfo parameter = parameters[parameterIndex];
+            object? argument = args != null && parameterIndex < args.Length ? args[parameterIndex] : null;
             if (argument == null)
             {
-                convertedArguments[i] = GetDefaultValue(parameter.ParameterType);
+                convertedArguments[parameterIndex] = GetDefaultValue(parameter.ParameterType);
                 continue;
             }
 
             Type targetType = Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType;
-            convertedArguments[i] = Convert.ChangeType(argument, targetType);
+            convertedArguments[parameterIndex] = Convert.ChangeType(argument, targetType);
         }
 
         return convertedArguments;
