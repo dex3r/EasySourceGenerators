@@ -10,9 +10,9 @@ public class MocksTests
     {
         MockGeneratorsFactory factory = new MockGeneratorsFactory();
 
-        IMethodBuilder result = factory.ForMethod();
+        IMethodBodyBuilder result = factory.ForMethod();
 
-        Assert.That(result, Is.TypeOf<MockMethodBuilder>());
+        Assert.That(result, Is.TypeOf<MockMethodBodyBuilder>());
     }
 
     [Test]
@@ -118,19 +118,19 @@ public class MocksTests
     [Test]
     public void MockMethodBuilder_WithParameter_ReturnsGenericBuilder()
     {
-        MockMethodBuilder builder = new MockMethodBuilder();
+        MockMethodBodyBuilder bodyBuilder = new MockMethodBodyBuilder();
 
-        IMethodBuilder<int> result = builder.WithParameter<int>();
+        IMethodBodyBuilder<int> result = bodyBuilder.WithParameter<int>();
 
-        Assert.That(result, Is.TypeOf<MockMethodBuilder<int>>());
+        Assert.That(result, Is.TypeOf<MockMethodBodyBuilder<int>>());
     }
 
     [Test]
     public void MockMethodBuilder_WithReturnType_ReturnsMockImplementationGenerator()
     {
-        MockMethodBuilder builder = new MockMethodBuilder();
+        MockMethodBodyBuilder bodyBuilder = new MockMethodBodyBuilder();
 
-        IMethodImplementationGenerator<string> result = builder.WithReturnType<string>();
+        IMethodImplementationGenerator<string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MockImplementationGenerator<string>>());
     }
@@ -148,9 +148,9 @@ public class MocksTests
     [Test]
     public void MockMethodBuilderGeneric_WithReturnType_ReturnsArgImplementationGenerator()
     {
-        MockMethodBuilder<int> builder = new MockMethodBuilder<int>();
+        MockMethodBodyBuilder<int> bodyBuilder = new MockMethodBodyBuilder<int>();
 
-        IMethodImplementationGenerator<int, string> result = builder.WithReturnType<string>();
+        IMethodImplementationGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<int, string>>());
     }

@@ -4,18 +4,18 @@ using EasySourceGenerators.Generators;
 namespace EasySourceGenerators.GeneratorTests;
 
 [TestFixture]
-public class MethodBuilderTests
+public class MethodBodyBodyBuilderTests
 {
     [Test]
     public void WithParameter_ReturnsGenericMethodBuilder()
     {
         TrackingGeneratorsFactory factory = new TrackingGeneratorsFactory();
-        MethodBuilder builder = new MethodBuilder(factory);
+        MethodBodyBuilder bodyBuilder = new MethodBodyBuilder(factory);
 
-        IMethodBuilder<int> result = builder.WithParameter<int>();
+        IMethodBodyBuilder<int> result = bodyBuilder.WithParameter<int>();
         IMethodImplementationGenerator<int, string> implementation = result.WithReturnType<string>();
 
-        Assert.That(result, Is.TypeOf<MethodBuilder<int>>());
+        Assert.That(result, Is.TypeOf<MethodBodyBodyBuilder<int>>());
         Assert.That(implementation, Is.TypeOf<TrackingArgImplementationGenerator<int, string>>());
         Assert.That(factory.ArgCreateImplementationCalls, Is.EqualTo(1));
     }
@@ -24,9 +24,9 @@ public class MethodBuilderTests
     public void WithReturnType_OnNonGenericBuilder_UsesFactoryCreateImplementation()
     {
         TrackingGeneratorsFactory factory = new TrackingGeneratorsFactory();
-        MethodBuilder builder = new MethodBuilder(factory);
+        MethodBodyBuilder bodyBuilder = new MethodBodyBuilder(factory);
 
-        IMethodImplementationGenerator<string> result = builder.WithReturnType<string>();
+        IMethodImplementationGenerator<string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<TrackingTypedImplementationGenerator<string>>());
         Assert.That(factory.TypedCreateImplementationCalls, Is.EqualTo(1));
@@ -36,9 +36,9 @@ public class MethodBuilderTests
     public void WithReturnType_OnGenericBuilder_UsesFactoryCreateImplementationWithArg()
     {
         TrackingGeneratorsFactory factory = new TrackingGeneratorsFactory();
-        MethodBuilder<int> builder = new MethodBuilder<int>(factory);
+        MethodBodyBodyBuilder<int> bodyBuilder = new MethodBodyBodyBuilder<int>(factory);
 
-        IMethodImplementationGenerator<int, string> result = builder.WithReturnType<string>();
+        IMethodImplementationGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<TrackingArgImplementationGenerator<int, string>>());
         Assert.That(factory.ArgCreateImplementationCalls, Is.EqualTo(1));
@@ -49,7 +49,7 @@ public class MethodBuilderTests
         public int TypedCreateImplementationCalls { get; private set; }
         public int ArgCreateImplementationCalls { get; private set; }
 
-        public IMethodBuilder ForMethod() => new MethodBuilder(this);
+        public IMethodBodyBuilder ForMethod() => new MethodBodyBuilder(this);
 
         public IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>()
         {

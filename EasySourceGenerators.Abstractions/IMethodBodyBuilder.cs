@@ -1,12 +1,12 @@
 ﻿namespace EasySourceGenerators.Abstractions;
 
-public interface IMethodBuilder
+public interface IMethodBodyBuilder
 {
-    IMethodBuilder<TArg1> WithParameter<TArg1>();
+    IMethodBodyBuilder<TArg1> WithParameter<TArg1>();
     IMethodImplementationGenerator<TReturnType> WithReturnType<TReturnType>();
 }
 
-public interface IMethodBuilder<TArg1>
+public interface IMethodBodyBuilder<TArg1>
 {
     IMethodImplementationGenerator<TArg1, TReturnType> WithReturnType<TReturnType>();
 }

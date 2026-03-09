@@ -1,4 +1,6 @@
-﻿namespace EasySourceGenerators.Abstractions;
+﻿using JetBrains.Annotations;
+
+namespace EasySourceGenerators.Abstractions;
 
 public static class Compiler
 {
@@ -7,12 +9,12 @@ public static class Compiler
     /// </summary>
     /// <example>
     /// The following code:
-    /// <code>int a = CalculateConstant(() => Math.Pi * 2);</code>
+    /// <code>int a = <see cref="Compiler"/>.<see cref="CalculateConstant"/>(() => Math.Pi * 2);</code>
     /// will be replaced during compilation with the following code:
     /// <code>int a = 6.2831853071795862</code>
     /// </example>
-    public static T CalculateConstant<T>(Func<T> compileTimeConstantFactory)
+    public static T CalculateConstant<T>([UsedImplicitly] Func<T> compileTimeConstantFactory)
     {
-        throw new NotImplementedException();
+        throw new InvalidOperationException("This method is intended to be used only at compile time and cannot not be called at runtime.");
     }
 }

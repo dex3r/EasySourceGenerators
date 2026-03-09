@@ -11,9 +11,9 @@ public class RecordingGeneratorsFactoryTests
     {
         RecordingGeneratorsFactory factory = new RecordingGeneratorsFactory();
 
-        IMethodBuilder result = factory.ForMethod();
+        IMethodBodyBuilder result = factory.ForMethod();
 
-        Assert.That(result, Is.TypeOf<MethodBuilder>());
+        Assert.That(result, Is.TypeOf<MethodBodyBuilder>());
     }
 
     [Test]

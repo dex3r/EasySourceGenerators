@@ -339,7 +339,7 @@ internal static class GeneratesMethodExecutionRuntime
         Compilation compilation)
     {
         string dummySource = BuildDummyImplementation(allPartialMethods);
-        string methodBuilderSource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.MethodBuilder.cs");
+        string methodBuilderSource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.MethodBodyBuilder.cs");
         string recordingFactorySource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.RecordingGeneratorsFactory.cs");
         CSharpParseOptions parseOptions = compilation.SyntaxTrees.FirstOrDefault()?.Options as CSharpParseOptions
                                          ?? CSharpParseOptions.Default;

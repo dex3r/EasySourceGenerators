@@ -2,7 +2,7 @@
 
 public interface IGeneratorsFactory
 {
-    IMethodBuilder ForMethod();
+    IMethodBodyBuilder ForMethod();
     
     IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>();
     IMethodImplementationGenerator<TArg1, TReturnType> CreateImplementation<TArg1, TReturnType>();

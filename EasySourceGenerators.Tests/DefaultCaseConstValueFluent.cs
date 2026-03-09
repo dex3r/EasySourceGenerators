@@ -46,7 +46,7 @@ public static partial class DefaultCaseConstValueFluentClass
     [MethodBodyGenerator(nameof(Foo))]
     static IMethodImplementationGenerator Foo_Generator_Default() =>
         Generate
-            .Method().WithParameter<int>().WithReturnType<int>()
+            .MethodBody().WithParameter<int>().WithReturnType<int>()
             .WithSwitchBody()
             .ForDefaultCase().ReturnConstantValue(_ => 888);
 }

@@ -134,7 +134,7 @@ public static partial class TestMapperFluentEnum
     [MethodBodyGenerator(nameof(MapToMammal))]
     static IMethodImplementationGenerator MapToMammal_Generator() =>
         Generate
-            .Method().WithParameter<TestFourLeggedAnimal>().WithReturnType<TestMammalAnimal>()
+            .MethodBody().WithParameter<TestFourLeggedAnimal>().WithReturnType<TestMammalAnimal>()
             .WithSwitchBody()
             .ForCases(GetFourLeggedAnimalsThatAreAlsoMammal()).ReturnConstantValue(a => Enum.Parse<TestMammalAnimal>(a.ToString(), true))
             .ForDefaultCase().UseBody(fourLeggedAnimal => () => throw new ArgumentException($"Cannot map {fourLeggedAnimal} to a mammal"));
@@ -152,7 +152,7 @@ public static partial class TestPiFluentClass
     [MethodBodyGenerator(nameof(GetPiDecimal))]
     static IMethodImplementationGenerator GetPiDecimal_Generator() =>
         Generate
-            .Method().WithParameter<int>().WithReturnType<int>()
+            .MethodBody().WithParameter<int>().WithReturnType<int>()
             .WithSwitchBody()
             .ForCases(0, 1, 2, new[]{300, 301, 302, 303}).ReturnConstantValue(decimalNumber => TestSlowMath.CalculatePiDecimal(decimalNumber))
             .ForDefaultCase().UseBody(decimalNumber => () => TestSlowMath.CalculatePiDecimal(decimalNumber));
@@ -165,7 +165,7 @@ public static partial class TestMapperFluent
     [MethodBodyGenerator(nameof(MapToMammal))]
     static IMethodImplementationGenerator MapToMammal_Generator() =>
         Generate
-            .Method().WithParameter<int>().WithReturnType<string>()
+            .MethodBody().WithParameter<int>().WithReturnType<string>()
             .WithSwitchBody()
             .ForCases(1).ReturnConstantValue(_ => "Dog")
             .ForCases(2).ReturnConstantValue(_ => "Cat")

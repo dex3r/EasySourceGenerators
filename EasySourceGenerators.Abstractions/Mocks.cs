@@ -2,7 +2,7 @@
 
 public class MockGeneratorsFactory : IGeneratorsFactory
 {
-    public IMethodBuilder ForMethod() => new MockMethodBuilder();
+    public IMethodBodyBuilder ForMethod() => new MockMethodBodyBuilder();
 
     public IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>() => new MockMethodImplementationGenerator<TReturnType>();
 
@@ -49,9 +49,9 @@ public class MockMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType>
         => new MockMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>();
 }
 
-public class MockMethodBuilder : IMethodBuilder
+public class MockMethodBodyBuilder : IMethodBodyBuilder
 {
-    public IMethodBuilder<TArg1> WithParameter<TArg1>() => new MockMethodBuilder<TArg1>();
+    public IMethodBodyBuilder<TArg1> WithParameter<TArg1>() => new MockMethodBodyBuilder<TArg1>();
 
     public IMethodImplementationGenerator<TReturnType> WithReturnType<TReturnType>() => new MockImplementationGenerator<TReturnType>();
 }
@@ -61,7 +61,7 @@ public class MockImplementationGenerator<TReturnType> : IMethodImplementationGen
     public IMethodImplementationGenerator UseBody(Func<object> body) => this;
 }
 
-public class MockMethodBuilder<TArg1Input> : IMethodBuilder<TArg1Input>
+public class MockMethodBodyBuilder<TArg1Input> : IMethodBodyBuilder<TArg1Input>
 {
     public IMethodImplementationGenerator<TArg1Input, TReturnType> WithReturnType<TReturnType>()
         => new MockMethodImplementationGenerator<TArg1Input, TReturnType>();

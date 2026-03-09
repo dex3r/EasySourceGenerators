@@ -22,7 +22,7 @@ public partial class ColorsClass
 {
     public partial string GetAllColorsString();
 
-    [GeneratesMethod(nameof(GetAllColorsString))]
+    [MethodBodyGenerator(nameof(GetAllColorsString))]
     static string GetAllColorsString_Generator() =>
         string.Join(", ", Enum.GetNames<ColorsEnum>());
 }
@@ -41,14 +41,14 @@ public static partial class PiExample
 {
     public static partial int GetPiDecimal(int decimalNumber);
 
-    [GeneratesMethod(nameof(GetPiDecimal))]
+    [MethodBodyGenerator(nameof(GetPiDecimal))]
     [SwitchCase(0)]
     [SwitchCase(1)]
     [SwitchCase(2)]
     static int GetPiDecimal_Generator_Specialized(int decimalNumber) =>
         SlowMath.CalculatePiDecimal(decimalNumber);
 
-    [GeneratesMethod(nameof(GetPiDecimal))]
+    [MethodBodyGenerator(nameof(GetPiDecimal))]
     [SwitchDefault]
     static Func<int, int> GetPiDecimal_Generator_Fallback() =>
         decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber);
@@ -82,7 +82,7 @@ public static partial class MapperFluent
 {
     public static partial Mammal MapToMammal(FourLegged fourLegged);
 
-    [GeneratesMethod(nameof(MapToMammal))]
+    [MethodBodyGenerator(nameof(MapToMammal))]
     static IMethodImplementationGenerator MapToAnimal_Generator() =>
         Generate
             .Method().WithParameter<FourLegged>().WithReturnType<Mammal>()

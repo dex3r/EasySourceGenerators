@@ -12,6 +12,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySourceGenerators.Genera
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasySourceGenerators.ConsoleAppTests", "EasySourceGenerators.ConsoleAppTests\EasySourceGenerators.ConsoleAppTests.csproj", "{13D59D5D-597F-4003-B9B8-54BAA8D9A5E0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Files", "Files", "{38625342-923C-4295-B445-A476B5DA94B9}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Release|Any CPU = Release|Any CPU

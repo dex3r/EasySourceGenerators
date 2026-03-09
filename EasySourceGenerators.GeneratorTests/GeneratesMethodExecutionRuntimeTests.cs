@@ -222,7 +222,7 @@ public class GeneratesMethodExecutionRuntimeTests
 
                                                              private static IMethodImplementationGenerator GenerateMethod()
                                                              {
-                                                                 return global::EasySourceGenerators.Abstractions.Generate.Method()
+                                                                 return global::EasySourceGenerators.Abstractions.Generate.MethodBody()
                                                                      .WithParameter<int>()
                                                                      .WithReturnType<int>()
                                                                      .WithSwitchBody()

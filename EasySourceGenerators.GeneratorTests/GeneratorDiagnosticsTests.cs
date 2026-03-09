@@ -191,7 +191,7 @@ public class GeneratorDiagnosticsTests
 
                 [MethodBodyGenerator(nameof(GetValue))]
                 private static IMethodImplementationGenerator GetValue_Generator() =>
-                    Generate.Method().WithParameter<int>().WithReturnType<int>();
+                    Generate.MethodBody().WithParameter<int>().WithReturnType<int>();
             }
             """;
 
@@ -404,7 +404,7 @@ public class GeneratorDiagnosticsTests
 
                 [MethodBodyGenerator(nameof(GetValue))]
                 static IMethodImplementationGenerator GetValue_Generator() =>
-                    Generate.Method().WithReturnType<string>().UseBody(() => "hello");
+                    Generate.MethodBody().WithReturnType<string>().UseBody(() => "hello");
             }
             """;
 

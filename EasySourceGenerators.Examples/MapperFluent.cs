@@ -19,7 +19,7 @@ public static partial class MapperFluent
     [MethodBodyGenerator(nameof(MapToMammal))]
     static IMethodImplementationGenerator MapToAnimal_Generator() =>
         Generate
-            .Method().WithParameter<FourLegged>().WithReturnType<Mammal>()
+            .MethodBody().WithParameter<FourLegged>().WithReturnType<Mammal>()
             .WithSwitchBody()
             .ForCases(GetFourLeggedAnimalsThatHasMatchInMammalAnimal()).ReturnConstantValue(fourLegged => Enum.Parse<Mammal>(fourLegged.ToString(), true))
             .ForDefaultCase().UseBody(fourLegged => () => throw new ArgumentException($"Cannot map {fourLegged} to a Mammal"));
