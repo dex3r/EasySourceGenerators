@@ -10,10 +10,10 @@ public static partial class PiExampleFluent
     [MethodBodyGenerator(nameof(GetPiDecimal))]
     static IMethodBodyGenerator GetPiDecimal_Generator_Specialized() =>
         Generate.MethodBody()
-            .ForMethod().WithOneParameter<int>().WithReturnType<int>()
-            .
-            .ForCases(0, 1, 2, new[]{300, 301, 302, 303}).ReturnConstantValue(decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber))
-            .ForDefaultCase().UseBody(decimalNumber => () => SlowMath.CalculatePiDecimal(decimalNumber));
+            .ForMethod().WithReturnType<int>().WithOneParameter<int>()
+            .BodyWithSwitchStatement()
+            .ForCases(0, 1, 2, 300, 301, 302, 303).ReturnConstantValue(decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber))
+            .ForDefaultCase().UseProvidedBody(decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber));
 }
 
 /*

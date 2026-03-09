@@ -1,8 +1,8 @@
 ﻿namespace EasySourceGenerators.Abstractions;
 
-public interface IMethodBodyGeneratorSwitchBody<out TParam1, in TReturnType>
+public interface IMethodBodyGeneratorSwitchBody<TParam1, in TReturnType>
 {
-    IMethodBodyGeneratorSwitchBodyCase<TParam1, TReturnType> ForCases(params object[] cases);
+    IMethodBodyGeneratorSwitchBodyCase<TParam1, TReturnType> ForCases(params TParam1[] cases);
     IMethodBodyGeneratorSwitchBodyDefaultCase<TParam1, TReturnType> ForDefaultCase();
 }
 
