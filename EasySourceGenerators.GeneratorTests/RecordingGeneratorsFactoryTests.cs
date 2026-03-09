@@ -21,7 +21,7 @@ public class RecordingGeneratorsFactoryTests
     {
         RecordingGeneratorsFactory factory = new RecordingGeneratorsFactory();
 
-        IMethodImplementationGenerator<string> result = factory.CreateImplementation<string>();
+        IMethodBodyGenerator<string> result = factory.CreateImplementation<string>();
 
         Assert.That(factory.LastRecord, Is.Not.Null);
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGeneratorTyped<string>>());
@@ -32,7 +32,7 @@ public class RecordingGeneratorsFactoryTests
     {
         RecordingGeneratorsFactory factory = new RecordingGeneratorsFactory();
 
-        IMethodImplementationGenerator result = factory.CreateImplementation();
+        IMethodBodyGeneratorWithNoParameter result = factory.CreateImplementation();
 
         Assert.That(factory.LastRecord, Is.Not.Null);
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGenerator>());
@@ -43,7 +43,7 @@ public class RecordingGeneratorsFactoryTests
     {
         RecordingGeneratorsFactory factory = new RecordingGeneratorsFactory();
 
-        IMethodImplementationGenerator<int, string> result = factory.CreateImplementation<int, string>();
+        IMethodBodyGenerator<int, string> result = factory.CreateImplementation<int, string>();
 
         Assert.That(factory.LastRecord, Is.Not.Null);
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGenerator<int, string>>());
@@ -54,7 +54,7 @@ public class RecordingGeneratorsFactoryTests
     {
         RecordingMethodImplementationGeneratorTyped<string> generator = new RecordingMethodImplementationGeneratorTyped<string>();
 
-        IMethodImplementationGenerator result = generator.UseBody(() => "a");
+        IMethodBodyGeneratorWithNoParameter result = generator.BodyReturningConstantValue(() => "a");
 
         Assert.That(result, Is.SameAs(generator));
     }
@@ -65,7 +65,7 @@ public class RecordingGeneratorsFactoryTests
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGenerator<int, string> generator = new RecordingMethodImplementationGenerator<int, string>(record);
 
-        IMethodImplementationGeneratorSwitchBody<int, string> result = generator.WithSwitchBody();
+        IMethodBodyGeneratorSwitchBody<int, string> result = generator.GenerateSwitchBody();
 
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGeneratorSwitchBody<int, string>>());
     }
@@ -87,9 +87,9 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<int, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<int, int>(record);
-        IMethodImplementationGeneratorSwitchBodyCase<int, int> caseBuilder = switchBody.ForCases(10, 20);
+        IMethodBodyGeneratorSwitchBodyCase<int, int> caseBuilder = switchBody.ForCases(10, 20);
 
-        IMethodImplementationGeneratorSwitchBody<int, int> result = caseBuilder.ReturnConstantValue(value => value + 1);
+        IMethodBodyGeneratorSwitchBody<int, int> result = caseBuilder.ReturnConstantValue(value => value + 1);
 
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGeneratorSwitchBody<int, int>>());
         Assert.That(record.CaseKeys, Is.EqualTo(new object[] { 10, 20 }));
@@ -101,9 +101,9 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<int, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<int, int>(record);
-        IMethodImplementationGeneratorSwitchBodyCase<int, int> caseBuilder = switchBody.ForCases(5, 6);
+        IMethodBodyGeneratorSwitchBodyCase<int, int> caseBuilder = switchBody.ForCases(5, 6);
 
-        IMethodImplementationGeneratorSwitchBody<int, int> result = caseBuilder.UseBody(_ => _ => { });
+        IMethodBodyGeneratorSwitchBody<int, int> result = caseBuilder.UseProvidedBody(_ => _ => { });
 
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGeneratorSwitchBody<int, int>>());
         Assert.That(record.CaseKeys, Is.EqualTo(new object[] { 5, 6 }));
@@ -115,7 +115,7 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<string, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<string, int>(record);
-        IMethodImplementationGeneratorSwitchBodyCase<string, int> caseBuilder = switchBody.ForCases((object?)null!);
+        IMethodBodyGeneratorSwitchBodyCase<string, int> caseBuilder = switchBody.ForCases((object?)null!);
 
         TestDelegate action = () => caseBuilder.ReturnConstantValue(_ => 1);
 
@@ -127,9 +127,9 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<string, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<string, int>(record);
-        IMethodImplementationGeneratorSwitchBodyCase<string, int> caseBuilder = switchBody.ForCases((object?)null!);
+        IMethodBodyGeneratorSwitchBodyCase<string, int> caseBuilder = switchBody.ForCases((object?)null!);
 
-        TestDelegate action = () => caseBuilder.UseBody(_ => _ => { });
+        TestDelegate action = () => caseBuilder.UseProvidedBody(_ => _ => { });
 
         Assert.That(action, Throws.TypeOf<InvalidOperationException>());
     }
@@ -139,9 +139,9 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<int, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<int, int>(record);
-        IMethodImplementationGeneratorSwitchBodyDefaultCase<int, int> defaultCase = switchBody.ForDefaultCase();
+        IMethodBodyGeneratorSwitchBodyDefaultCase<int, int> defaultCase = switchBody.ForDefaultCase();
 
-        IMethodImplementationGenerator<int, int> result = defaultCase.ReturnConstantValue(value => value + 1);
+        IMethodBodyGenerator<int, int> result = defaultCase.ReturnConstantValue(value => value + 1);
 
         Assert.That(record.HasDefaultCase, Is.True);
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGenerator<int, int>>());
@@ -152,9 +152,9 @@ public class RecordingGeneratorsFactoryTests
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         RecordingMethodImplementationGeneratorSwitchBody<int, int> switchBody = new RecordingMethodImplementationGeneratorSwitchBody<int, int>(record);
-        IMethodImplementationGeneratorSwitchBodyDefaultCase<int, int> defaultCase = switchBody.ForDefaultCase();
+        IMethodBodyGeneratorSwitchBodyDefaultCase<int, int> defaultCase = switchBody.ForDefaultCase();
 
-        IMethodImplementationGenerator<int, int> result = defaultCase.UseBody(_ => () => 1);
+        IMethodBodyGenerator<int, int> result = defaultCase.UseProvidedBody(_ => () => 1);
 
         Assert.That(record.HasDefaultCase, Is.True);
         Assert.That(result, Is.TypeOf<RecordingMethodImplementationGenerator<int, int>>());

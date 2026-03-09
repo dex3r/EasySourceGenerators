@@ -215,17 +215,17 @@ public class GeneratesMethodExecutionRuntimeTests
 
                                                          public static class GenHost
                                                          {
-                                                             public static IMethodImplementationGenerator Generate()
+                                                             public static IMethodBodyGenerator Generate()
                                                              {
                                                                  return GenerateMethod();
                                                              }
 
-                                                             private static IMethodImplementationGenerator GenerateMethod()
+                                                             private static IMethodBodyGenerator GenerateMethod()
                                                              {
-                                                                 return global::EasySourceGenerators.Abstractions.Generate.MethodBody()
-                                                                     .WithParameter<int>()
+                                                                 return global::EasySourceGenerators.Abstractions.Generate.Method()
+                                                                     .WithOneParameter<int>()
                                                                      .WithReturnType<int>()
-                                                                     .WithSwitchBody()
+                                                                     .GenerateSwitchBody()
                                                                      .ForCases(1, new[] { 2, 3 }, "4")
                                                                      .ReturnConstantValue(value => value * 2)
                                                                      .ForDefaultCase()

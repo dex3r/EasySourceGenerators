@@ -13,7 +13,7 @@ public class MethodBodyBodyBuilderTests
         MethodBodyBuilder bodyBuilder = new MethodBodyBuilder(factory);
 
         IMethodBodyBuilder<int> result = bodyBuilder.WithParameter<int>();
-        IMethodImplementationGenerator<int, string> implementation = result.WithReturnType<string>();
+        IMethodBodyGenerator<int, string> implementation = result.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MethodBodyBodyBuilder<int>>());
         Assert.That(implementation, Is.TypeOf<TrackingArgImplementationGenerator<int, string>>());
@@ -26,7 +26,7 @@ public class MethodBodyBodyBuilderTests
         TrackingGeneratorsFactory factory = new TrackingGeneratorsFactory();
         MethodBodyBuilder bodyBuilder = new MethodBodyBuilder(factory);
 
-        IMethodImplementationGenerator<string> result = bodyBuilder.WithReturnType<string>();
+        IMethodBodyGenerator<string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<TrackingTypedImplementationGenerator<string>>());
         Assert.That(factory.TypedCreateImplementationCalls, Is.EqualTo(1));
@@ -38,40 +38,40 @@ public class MethodBodyBodyBuilderTests
         TrackingGeneratorsFactory factory = new TrackingGeneratorsFactory();
         MethodBodyBodyBuilder<int> bodyBuilder = new MethodBodyBodyBuilder<int>(factory);
 
-        IMethodImplementationGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
+        IMethodBodyGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<TrackingArgImplementationGenerator<int, string>>());
         Assert.That(factory.ArgCreateImplementationCalls, Is.EqualTo(1));
     }
 
-    private sealed class TrackingGeneratorsFactory : IGeneratorsFactory
+    private sealed class TrackingGeneratorsFactory : IMethodBodyGeneratorStage0
     {
         public int TypedCreateImplementationCalls { get; private set; }
         public int ArgCreateImplementationCalls { get; private set; }
 
         public IMethodBodyBuilder ForMethod() => new MethodBodyBuilder(this);
 
-        public IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>()
+        public IMethodBodyGenerator<TReturnType> CreateImplementation<TReturnType>()
         {
             TypedCreateImplementationCalls++;
             return new TrackingTypedImplementationGenerator<TReturnType>();
         }
 
-        public IMethodImplementationGenerator<TArg1, TReturnType> CreateImplementation<TArg1, TReturnType>()
+        public IMethodBodyGenerator<TArg1, TReturnType> CreateImplementation<TArg1, TReturnType>()
         {
             ArgCreateImplementationCalls++;
             return new TrackingArgImplementationGenerator<TArg1, TReturnType>();
         }
     }
 
-    private sealed class TrackingTypedImplementationGenerator<TReturnType> : IMethodImplementationGenerator<TReturnType>
+    private sealed class TrackingTypedImplementationGenerator<TReturnType> : IMethodBodyGenerator<TReturnType>
     {
-        public IMethodImplementationGenerator UseBody(Func<object> body) => this;
+        public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body) => this;
     }
 
-    private sealed class TrackingArgImplementationGenerator<TArg1, TReturnType> : IMethodImplementationGenerator<TArg1, TReturnType>
+    private sealed class TrackingArgImplementationGenerator<TArg1, TReturnType> : IMethodBodyGenerator<TArg1, TReturnType>
     {
-        public IMethodImplementationGeneratorSwitchBody<TArg1, TReturnType> WithSwitchBody() =>
+        public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> GenerateSwitchBody() =>
             new MockMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>();
     }
 }

@@ -7,7 +7,7 @@ public static partial class PiExampleWithTemplate
     public static partial int GetPiDecimal(int decimalNumber);
 
     [MethodBodyGenerator(nameof(GetPiDecimal))]
-    [MethodTemplate]
+    [BodyTemplate]
     static int GetPiDecimal_Template(int decimalNumber)
     {
         switch (decimalNumber)

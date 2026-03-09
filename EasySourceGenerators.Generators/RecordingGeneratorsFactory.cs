@@ -12,11 +12,11 @@ public class SwitchBodyRecord
     public bool HasDefaultCase { get; set; }
 }
 
-public class RecordingGeneratorsFactory : IGeneratorsFactory
+public class RecordingGeneratorsFactory : IMethodBodyGeneratorStage0
 {
     public SwitchBodyRecord? LastRecord { get; private set; }
 
-    public IMethodImplementationGenerator CreateImplementation()
+    public IMethodBodyGeneratorWithNoParameter CreateImplementation()
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         LastRecord = record;
@@ -25,14 +25,14 @@ public class RecordingGeneratorsFactory : IGeneratorsFactory
 
     public IMethodBodyBuilder ForMethod() => new MethodBodyBuilder(this);
 
-    public IMethodImplementationGenerator<TReturnType> CreateImplementation<TReturnType>()
+    public IMethodBodyGenerator<TReturnType> CreateImplementation<TReturnType>()
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         LastRecord = record;
         return new RecordingMethodImplementationGeneratorTyped<TReturnType>();
     }
 
-    public IMethodImplementationGenerator<TArg1, TReturnType> CreateImplementation<TArg1, TReturnType>()
+    public IMethodBodyGenerator<TArg1, TReturnType> CreateImplementation<TArg1, TReturnType>()
     {
         SwitchBodyRecord record = new SwitchBodyRecord();
         LastRecord = record;
@@ -40,31 +40,31 @@ public class RecordingGeneratorsFactory : IGeneratorsFactory
     }
 }
 
-public class RecordingMethodImplementationGenerator : IMethodImplementationGenerator;
+public class RecordingMethodImplementationGenerator : IMethodBodyGeneratorWithNoParameter;
 
-public class RecordingMethodImplementationGeneratorTyped<TReturnType> : IMethodImplementationGenerator<TReturnType>
+public class RecordingMethodImplementationGeneratorTyped<TReturnType> : IMethodBodyGenerator<TReturnType>
 {
-    public IMethodImplementationGenerator UseBody(Func<object> body) => this;
+    public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body) => this;
 }
 
-public class RecordingMethodImplementationGenerator<TArg1, TReturnType>(SwitchBodyRecord record) : IMethodImplementationGenerator<TArg1, TReturnType>
+public class RecordingMethodImplementationGenerator<TArg1, TReturnType>(SwitchBodyRecord record) : IMethodBodyGenerator<TArg1, TReturnType>
 {
-    public IMethodImplementationGeneratorSwitchBody<TArg1, TReturnType> WithSwitchBody()
+    public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> GenerateSwitchBody()
     {
         return new RecordingMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>(record);
     }
 }
 
 public class RecordingMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>(SwitchBodyRecord record)
-    : IMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>
+    : IMethodBodyGeneratorSwitchBody<TArg1, TReturnType>
 {
-    public IMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType> ForCases(params object[] cases)
+    public IMethodBodyGeneratorSwitchBodyCase<TArg1, TReturnType> ForCases(params object[] cases)
     {
         List<TArg1> flatCases = FlattenCases(cases).ToList();
         return new RecordingMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType>(record, flatCases);
     }
 
-    public IMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TReturnType> ForDefaultCase()
+    public IMethodBodyGeneratorSwitchBodyDefaultCase<TArg1, TReturnType> ForDefaultCase()
     {
         return new RecordingMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TReturnType>(record);
     }
@@ -93,9 +93,9 @@ public class RecordingMethodImplementationGeneratorSwitchBody<TArg1, TReturnType
 }
 
 public class RecordingMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType>(SwitchBodyRecord record, List<TArg1> cases)
-    : IMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType>
+    : IMethodBodyGeneratorSwitchBodyCase<TArg1, TReturnType>
 {
-    public IMethodImplementationGeneratorSwitchBody<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> constantValueFactory)
+    public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> constantValueFactory)
     {
         foreach (TArg1? caseValue in cases)
         {
@@ -106,7 +106,7 @@ public class RecordingMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturn
         return new RecordingMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>(record);
     }
 
-    public IMethodImplementationGeneratorSwitchBody<TArg1, TReturnType> UseBody(Func<TArg1, Action<TReturnType>> body)
+    public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> UseBody(Func<TArg1, Action<TReturnType>> body)
     {
         foreach (TArg1? caseValue in cases)
         {
@@ -118,15 +118,15 @@ public class RecordingMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturn
 }
 
 public class RecordingMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TReturnType>(SwitchBodyRecord record)
-    : IMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TReturnType>
+    : IMethodBodyGeneratorSwitchBodyDefaultCase<TArg1, TReturnType>
 {
-    public IMethodImplementationGenerator<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> func)
+    public IMethodBodyGenerator<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> func)
     {
         record.HasDefaultCase = true;
         return new RecordingMethodImplementationGenerator<TArg1, TReturnType>(record);
     }
 
-    public IMethodImplementationGenerator<TArg1, TReturnType> UseBody(Func<TArg1, Func<TReturnType>> func)
+    public IMethodBodyGenerator<TArg1, TReturnType> UseProvidedBody(Func<TArg1, Func<TReturnType>> func)
     {
         record.HasDefaultCase = true;
         return new RecordingMethodImplementationGenerator<TArg1, TReturnType>(record);

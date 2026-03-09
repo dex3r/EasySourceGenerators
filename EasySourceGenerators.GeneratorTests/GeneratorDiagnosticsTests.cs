@@ -174,10 +174,10 @@ public class GeneratorDiagnosticsTests
     [Test]
     public void GeneratesMethod_FluentUnfinished_EmitsMSGH004()
     {
-        // The generator method returns IMethodImplementationGenerator<int, int> directly
-        // (before calling WithSwitchBody / ForCases / ForDefaultCase), which the generator
+        // The generator method returns IMethodBodyGenerator<int, int> directly
+        // (before calling GenerateSwitchBody / ForCases / ForDefaultCase), which the generator
         // treats as a simple pattern and tries to execute it, resulting in a non-null
-        // IMethodImplementationGenerator object whose ToString() is not meaningful.
+        // IMethodBodyGenerator object whose ToString() is not meaningful.
         // We expect either an MSGH004 or generated code with no meaningful content.
         // Either way, no uncaught exception should escape the generator.
         string source = """
@@ -190,8 +190,8 @@ public class GeneratorDiagnosticsTests
                 public static partial int GetValue(int key);
 
                 [MethodBodyGenerator(nameof(GetValue))]
-                private static IMethodImplementationGenerator GetValue_Generator() =>
-                    Generate.MethodBody().WithParameter<int>().WithReturnType<int>();
+                private static IMethodBodyGenerator GetValue_Generator() =>
+                    Generate.Method().WithOneParameter<int>().WithReturnType<int>();
             }
             """;
 
@@ -403,8 +403,8 @@ public class GeneratorDiagnosticsTests
                 public partial string GetValue();
 
                 [MethodBodyGenerator(nameof(GetValue))]
-                static IMethodImplementationGenerator GetValue_Generator() =>
-                    Generate.MethodBody().WithReturnType<string>().UseBody(() => "hello");
+                static IMethodBodyGenerator GetValue_Generator() =>
+                    Generate.Method().WithReturnType<string>().BodyReturningConstantValue(() => "hello");
             }
             """;
 

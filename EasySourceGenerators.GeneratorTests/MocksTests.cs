@@ -20,7 +20,7 @@ public class MocksTests
     {
         MockGeneratorsFactory factory = new MockGeneratorsFactory();
 
-        IMethodImplementationGenerator<string> result = factory.CreateImplementation<string>();
+        IMethodBodyGenerator<string> result = factory.CreateImplementation<string>();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<string>>());
     }
@@ -30,7 +30,7 @@ public class MocksTests
     {
         MockGeneratorsFactory factory = new MockGeneratorsFactory();
 
-        IMethodImplementationGenerator<int, string> result = factory.CreateImplementation<int, string>();
+        IMethodBodyGenerator<int, string> result = factory.CreateImplementation<int, string>();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<int, string>>());
     }
@@ -40,7 +40,7 @@ public class MocksTests
     {
         MockMethodImplementationGenerator<string> generator = new MockMethodImplementationGenerator<string>();
 
-        IMethodImplementationGenerator result = generator.UseBody(() => "x");
+        IMethodBodyGeneratorWithNoParameter result = generator.BodyReturningConstantValue(() => "x");
 
         Assert.That(result, Is.SameAs(generator));
     }
@@ -50,7 +50,7 @@ public class MocksTests
     {
         MockMethodImplementationGenerator<int, string> generator = new MockMethodImplementationGenerator<int, string>();
 
-        IMethodImplementationGeneratorSwitchBody<int, string> result = generator.WithSwitchBody();
+        IMethodBodyGeneratorSwitchBody<int, string> result = generator.GenerateSwitchBody();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGeneratorSwitchBody<int, string>>());
     }
@@ -60,7 +60,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBody<int, string> switchBody = new MockMethodImplementationGeneratorSwitchBody<int, string>();
 
-        IMethodImplementationGeneratorSwitchBodyCase<int, string> result = switchBody.ForCases(1, 2);
+        IMethodBodyGeneratorSwitchBodyCase<int, string> result = switchBody.ForCases(1, 2);
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGeneratorSwitchBodyCase<int, string>>());
     }
@@ -70,7 +70,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBody<int, string> switchBody = new MockMethodImplementationGeneratorSwitchBody<int, string>();
 
-        IMethodImplementationGeneratorSwitchBodyDefaultCase<int, string> result = switchBody.ForDefaultCase();
+        IMethodBodyGeneratorSwitchBodyDefaultCase<int, string> result = switchBody.ForDefaultCase();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGeneratorSwitchBodyDefaultCase<int, string>>());
     }
@@ -80,7 +80,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBodyDefaultCase<int, string> defaultCase = new MockMethodImplementationGeneratorSwitchBodyDefaultCase<int, string>();
 
-        IMethodImplementationGenerator<int, string> result = defaultCase.ReturnConstantValue(value => value.ToString());
+        IMethodBodyGenerator<int, string> result = defaultCase.ReturnConstantValue(value => value.ToString());
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<int, string>>());
     }
@@ -90,7 +90,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBodyDefaultCase<int, string> defaultCase = new MockMethodImplementationGeneratorSwitchBodyDefaultCase<int, string>();
 
-        IMethodImplementationGenerator<int, string> result = defaultCase.UseBody(_ => () => "v");
+        IMethodBodyGenerator<int, string> result = defaultCase.UseProvidedBody(_ => () => "v");
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<int, string>>());
     }
@@ -100,7 +100,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBodyCase<int, string> caseBuilder = new MockMethodImplementationGeneratorSwitchBodyCase<int, string>();
 
-        IMethodImplementationGeneratorSwitchBody<int, string> result = caseBuilder.ReturnConstantValue(value => value.ToString());
+        IMethodBodyGeneratorSwitchBody<int, string> result = caseBuilder.ReturnConstantValue(value => value.ToString());
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGeneratorSwitchBody<int, string>>());
     }
@@ -110,7 +110,7 @@ public class MocksTests
     {
         MockMethodImplementationGeneratorSwitchBodyCase<int, string> caseBuilder = new MockMethodImplementationGeneratorSwitchBodyCase<int, string>();
 
-        IMethodImplementationGeneratorSwitchBody<int, string> result = caseBuilder.UseBody(_ => _ => { });
+        IMethodBodyGeneratorSwitchBody<int, string> result = caseBuilder.UseBody(_ => _ => { });
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGeneratorSwitchBody<int, string>>());
     }
@@ -130,7 +130,7 @@ public class MocksTests
     {
         MockMethodBodyBuilder bodyBuilder = new MockMethodBodyBuilder();
 
-        IMethodImplementationGenerator<string> result = bodyBuilder.WithReturnType<string>();
+        IMethodBodyGenerator<string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MockImplementationGenerator<string>>());
     }
@@ -140,7 +140,7 @@ public class MocksTests
     {
         MockImplementationGenerator<string> generator = new MockImplementationGenerator<string>();
 
-        IMethodImplementationGenerator result = generator.UseBody(() => "x");
+        IMethodBodyGeneratorWithNoParameter result = generator.BodyReturningConstantValue(() => "x");
 
         Assert.That(result, Is.SameAs(generator));
     }
@@ -150,7 +150,7 @@ public class MocksTests
     {
         MockMethodBodyBuilder<int> bodyBuilder = new MockMethodBodyBuilder<int>();
 
-        IMethodImplementationGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
+        IMethodBodyGenerator<int, string> result = bodyBuilder.WithReturnType<string>();
 
         Assert.That(result, Is.TypeOf<MockMethodImplementationGenerator<int, string>>());
     }

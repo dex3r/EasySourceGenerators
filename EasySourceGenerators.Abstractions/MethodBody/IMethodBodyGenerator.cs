@@ -1,0 +1,3 @@
+﻿namespace EasySourceGenerators.Abstractions;
+
+public interface IMethodBodyGenerator;

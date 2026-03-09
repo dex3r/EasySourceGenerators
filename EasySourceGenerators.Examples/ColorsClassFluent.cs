@@ -7,10 +7,10 @@ public partial class ColorsClassFluent
     public partial string GetAllColorsString();
 
     [MethodBodyGenerator(nameof(GetAllColorsString))]
-    static IMethodImplementationGenerator GetAllColorsString_Generator() =>
-        Generate
-            .MethodBody().WithReturnType<string>()
-            .UseBody(() => string.Join(", ", Enum.GetNames<ColorsEnum>()));
+    static IMethodBodyGenerator GetAllColorsString_Generator() =>
+        Generate.MethodBody()
+            .WithReturnType<string>()
+            .BodyReturningConstantValue(() => string.Join(", ", Enum.GetNames<ColorsEnum>()));
 }
 
 /*
