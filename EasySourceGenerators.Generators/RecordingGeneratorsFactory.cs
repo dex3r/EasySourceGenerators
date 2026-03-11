@@ -71,8 +71,11 @@ public class RecordingMethodImplementationGenerator : IMethodBodyGeneratorWithNo
 
 public class RecordingMethodImplementationGeneratorTyped<TReturnType> : IMethodBodyGenerator<TReturnType>
 {
-    public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body) =>
-        new RecordingMethodImplementationGenerator();
+    public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body)
+    {
+        body();
+        return new RecordingMethodImplementationGenerator();
+    }
 }
 
 public class RecordingMethodImplementationGenerator<TArg1, TReturnType>(SwitchBodyRecord record) : IMethodBodyGenerator<TArg1, TReturnType>

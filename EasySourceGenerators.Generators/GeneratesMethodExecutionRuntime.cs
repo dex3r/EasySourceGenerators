@@ -73,7 +73,9 @@ internal static class GeneratesMethodExecutionRuntime
                 {
                     Assembly loaded = context.LoadFromStream(new MemoryStream(bytes));
                     if (string.Equals(assemblyName.Name, Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
                         capturedAbstractionsAssembly = loaded;
+                    }
                     return loaded;
                 }
 
@@ -226,7 +228,9 @@ internal static class GeneratesMethodExecutionRuntime
                 {
                     Assembly loaded = context.LoadFromStream(new MemoryStream(bytes));
                     if (string.Equals(assemblyName.Name, Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
                         capturedAbstractionsAssembly = loaded;
+                    }
                     return loaded;
                 }
 
