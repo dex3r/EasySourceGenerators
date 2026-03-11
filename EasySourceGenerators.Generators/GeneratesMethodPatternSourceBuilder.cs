@@ -175,7 +175,7 @@ internal static class GeneratesMethodPatternSourceBuilder
         return ExtractInnermostLambdaBody(bodyExpression);
     }
 
-    private static string? ExtractDefaultExpressionFromFluentMethod(MethodDeclarationSyntax method)
+    internal static (string? expression, List<string> lambdaParamNames) ExtractDefaultExpressionAndParamNames(MethodDeclarationSyntax method)
     {
         IEnumerable<InvocationExpressionSyntax> invocations = method.DescendantNodes().OfType<InvocationExpressionSyntax>();
         foreach (InvocationExpressionSyntax invocation in invocations)
@@ -186,16 +186,57 @@ internal static class GeneratesMethodPatternSourceBuilder
             }
 
             string methodName = memberAccessExpression.Name.Identifier.Text;
-            if (methodName is not ("ReturnConstantValue" or "BodyReturningConstantValue"))
+            if (methodName is not ("ReturnConstantValue" or "BodyReturningConstantValue" or "UseProvidedBody" or "BodyRetuningConstant"))
             {
                 continue;
             }
 
-            ExpressionSyntax? argumentExpression = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            return ExtractInnermostLambdaBody(argumentExpression);
+            // Check if this method is called on the result of ForDefaultCase()
+            if (memberAccessExpression.Expression is InvocationExpressionSyntax receiverInvocation
+                && receiverInvocation.Expression is MemberAccessExpressionSyntax receiverMember
+                && receiverMember.Name.Identifier.Text == "ForDefaultCase")
+            {
+                ExpressionSyntax? argumentExpression = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
+                List<string> paramNames = ExtractLambdaParameterNames(argumentExpression);
+                string? body = ExtractInnermostLambdaBody(argumentExpression);
+                return (body, paramNames);
+            }
         }
 
-        return null;
+        return (null, new List<string>());
+    }
+
+    internal static string? ExtractDefaultExpressionFromFluentMethod(MethodDeclarationSyntax method)
+    {
+        (string? expression, _) = ExtractDefaultExpressionAndParamNames(method);
+        return expression;
+    }
+
+    private static List<string> ExtractLambdaParameterNames(ExpressionSyntax? expression)
+    {
+        List<string> names = new();
+        while (expression != null)
+        {
+            if (expression is SimpleLambdaExpressionSyntax simpleLambda)
+            {
+                names.Add(simpleLambda.Parameter.Identifier.Text);
+                expression = simpleLambda.Body as ExpressionSyntax;
+            }
+            else if (expression is ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
+            {
+                foreach (ParameterSyntax parameter in parenthesizedLambda.ParameterList.Parameters)
+                {
+                    names.Add(parameter.Identifier.Text);
+                }
+                expression = parenthesizedLambda.Body as ExpressionSyntax;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return names;
     }
 
     private static string? ExtractInnermostLambdaBody(ExpressionSyntax? expression)
@@ -257,6 +298,194 @@ internal static class GeneratesMethodPatternSourceBuilder
         builder.AppendLine("    }");
         builder.AppendLine("}");
         return builder.ToString();
+    }
+
+    internal static string GenerateEntireMethodSimple(
+        INamedTypeSymbol containingType,
+        MethodData methodData)
+    {
+        StringBuilder builder = new();
+        AppendNamespaceAndTypeHeaderForEntireMethod(builder, containingType, methodData);
+
+        if (methodData.ReturnTypeName != "void" && methodData.ConstantValue != null)
+        {
+            string literal = FormatValueAsCSharpLiteralByTypeName(methodData.ConstantValue, methodData.ReturnTypeName);
+            builder.AppendLine($"        return {literal};");
+        }
+
+        builder.AppendLine("    }");
+        builder.AppendLine("}");
+        return builder.ToString();
+    }
+
+    internal static string GenerateEntireMethodWithSwitch(
+        INamedTypeSymbol containingType,
+        MethodData methodData,
+        string? defaultExpression,
+        List<string> lambdaParamNames)
+    {
+        StringBuilder builder = new();
+        List<string> paramNames = lambdaParamNames.Count >= methodData.ParameterTypeNames.Count
+            ? lambdaParamNames
+            : new List<string>();
+        AppendNamespaceAndTypeHeaderForEntireMethod(builder, containingType, methodData, paramNames);
+
+        if (methodData.ParameterTypeNames.Count == 0)
+        {
+            string fallbackExpression = defaultExpression ?? "default";
+            builder.AppendLine($"        return {fallbackExpression};");
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            return builder.ToString();
+        }
+
+        string switchParameterName = paramNames.Count > 0 ? paramNames[0] : GetParameterName(methodData.ParameterTypeNames[0]);
+        builder.AppendLine($"        switch ({switchParameterName})");
+        builder.AppendLine("        {");
+
+        SwitchBodyData switchBody = methodData.SwitchBody!;
+        string? parameterTypeName = methodData.ParameterTypeNames.Count > 0 ? methodData.ParameterTypeNames[0] : null;
+        foreach ((object key, string value) in switchBody.CasePairs)
+        {
+            string formattedKey = FormatKeyAsCSharpLiteralByTypeName(key, parameterTypeName);
+            string formattedValue = FormatValueByReturnTypeName(value, methodData.ReturnTypeName);
+            builder.AppendLine($"            case {formattedKey}: return {formattedValue};");
+        }
+
+        if (defaultExpression != null)
+        {
+            string defaultStatement = defaultExpression.TrimStart().StartsWith("throw ", StringComparison.Ordinal)
+                ? $"            default: {defaultExpression};"
+                : $"            default: return {defaultExpression};";
+            builder.AppendLine(defaultStatement);
+        }
+
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
+        builder.AppendLine("}");
+        return builder.ToString();
+    }
+
+    private static void AppendNamespaceAndTypeHeaderForEntireMethod(StringBuilder builder, INamedTypeSymbol containingType, MethodData methodData, List<string>? parameterNames = null)
+    {
+        builder.AppendLine("// <auto-generated/>");
+        builder.AppendLine($"// Generated by {typeof(GeneratesMethodGenerator).FullName} for method '{methodData.MethodName}'.");
+        builder.AppendLine("#pragma warning disable");
+        builder.AppendLine();
+
+        string? namespaceName = containingType.ContainingNamespace?.IsGlobalNamespace == false
+            ? containingType.ContainingNamespace.ToDisplayString()
+            : null;
+        if (namespaceName != null)
+        {
+            builder.AppendLine($"namespace {namespaceName};");
+            builder.AppendLine();
+        }
+
+        string typeKeyword = containingType.TypeKind switch
+        {
+            TypeKind.Struct => "struct",
+            TypeKind.Interface => "interface",
+            _ => "class"
+        };
+
+        string typeModifiers = containingType.IsStatic ? "static partial" : "partial";
+        builder.AppendLine($"{typeModifiers} {typeKeyword} {containingType.Name}");
+        builder.AppendLine("{");
+
+        string returnTypeName = methodData.ReturnTypeName;
+        string methodName = methodData.MethodName;
+        string parameters = BuildParameterList(methodData.ParameterTypeNames, parameterNames);
+        string staticModifier = containingType.IsStatic ? "static " : "";
+
+        builder.AppendLine($"    public {staticModifier}{returnTypeName} {methodName}({parameters})");
+        builder.AppendLine("    {");
+    }
+
+    private static string BuildParameterList(IReadOnlyList<string> parameterTypeNames, List<string>? parameterNames = null)
+    {
+        List<string> parameters = new();
+        for (int index = 0; index < parameterTypeNames.Count; index++)
+        {
+            string paramName = (parameterNames != null && index < parameterNames.Count)
+                ? parameterNames[index]
+                : GetParameterName(parameterTypeNames[index]);
+            parameters.Add($"{parameterTypeNames[index]} {paramName}");
+        }
+        return string.Join(", ", parameters);
+    }
+
+    private static string GetParameterName(string typeName)
+    {
+        string simpleName = typeName.Contains('.') ? typeName.Substring(typeName.LastIndexOf('.') + 1) : typeName;
+        return char.ToLowerInvariant(simpleName[0]) + simpleName.Substring(1);
+    }
+
+    private static string FormatValueAsCSharpLiteralByTypeName(string? value, string returnTypeName)
+    {
+        if (value == null)
+        {
+            return "default";
+        }
+
+        if (returnTypeName == "System.String" || returnTypeName == "string")
+        {
+            return SyntaxFactory.Literal(value).Text;
+        }
+
+        if (returnTypeName == "System.Boolean" || returnTypeName == "bool")
+        {
+            return value.ToLowerInvariant();
+        }
+
+        return value;
+    }
+
+    private static string FormatKeyAsCSharpLiteralByTypeName(object key, string? parameterTypeName)
+    {
+        if (key is bool b)
+        {
+            return b ? "true" : "false";
+        }
+
+        if (key is string s)
+        {
+            return SyntaxFactory.Literal(s).Text;
+        }
+
+        // Check if it looks like an enum value (the key is the enum name)
+        if (parameterTypeName != null && key.GetType().IsEnum)
+        {
+            return $"{parameterTypeName}.{key}";
+        }
+
+        return key.ToString()!;
+    }
+
+    private static string FormatValueByReturnTypeName(string value, string returnTypeName)
+    {
+        // Check if the return type looks like an enum (contains a dot and doesn't start with System.)
+        // For enum values, the value will be the enum name, so prefix with the type
+        if (!string.IsNullOrEmpty(returnTypeName)
+            && returnTypeName != "System.String" && returnTypeName != "string"
+            && returnTypeName != "System.Int32" && returnTypeName != "int"
+            && returnTypeName != "System.Boolean" && returnTypeName != "bool"
+            && !returnTypeName.StartsWith("System.", StringComparison.Ordinal))
+        {
+            return $"{returnTypeName}.{value}";
+        }
+
+        if (returnTypeName == "System.String" || returnTypeName == "string")
+        {
+            return SyntaxFactory.Literal(value).Text;
+        }
+
+        if (returnTypeName == "System.Boolean" || returnTypeName == "bool")
+        {
+            return value.ToLowerInvariant();
+        }
+
+        return value;
     }
 
     private static void AppendNamespaceAndTypeHeader(StringBuilder builder, INamedTypeSymbol containingType, IMethodSymbol partialMethod)

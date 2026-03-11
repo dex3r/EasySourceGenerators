@@ -222,8 +222,8 @@ public class GeneratesMethodExecutionRuntimeTests
 
                                                              private static IMethodBodyGenerator GenerateMethod()
                                                              {
-                                                                 return global::EasySourceGenerators.Abstractions.Generate.Method()
-                                                                     .WithOneParameter<int>()
+                                                                 return global::EasySourceGenerators.Abstractions.Generate.MethodBody()
+                                                                     .WithParameter<int>()
                                                                      .WithReturnType<int>()
                                                                      .GenerateSwitchBody()
                                                                      .ForCases(1, new[] { 2, 3 }, "4")

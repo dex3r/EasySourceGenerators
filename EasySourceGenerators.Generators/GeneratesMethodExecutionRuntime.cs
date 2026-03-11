@@ -14,6 +14,13 @@ internal sealed record SwitchBodyData(
     IReadOnlyList<(object key, string value)> CasePairs,
     bool HasDefaultCase);
 
+internal sealed record MethodData(
+    string MethodName,
+    string ReturnTypeName,
+    IReadOnlyList<string> ParameterTypeNames,
+    string? ConstantValue,
+    SwitchBodyData? SwitchBody);
+
 internal static class GeneratesMethodExecutionRuntime
 {
     internal static (string? value, string? error) ExecuteSimpleGeneratorMethod(
@@ -66,7 +73,9 @@ internal static class GeneratesMethodExecutionRuntime
                 {
                     Assembly loaded = context.LoadFromStream(new MemoryStream(bytes));
                     if (string.Equals(assemblyName.Name, Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
                         capturedAbstractionsAssembly = loaded;
+                    }
                     return loaded;
                 }
 
@@ -168,6 +177,150 @@ internal static class GeneratesMethodExecutionRuntime
             }
 
             return (ExtractSwitchBodyData(lastRecord, partialMethod.ReturnType), null);
+        }
+        catch (Exception ex)
+        {
+            return (null, $"Error executing generator method '{generatorMethod.Name}': {ex.GetBaseException()}");
+        }
+        finally
+        {
+            loadContext?.Unload();
+        }
+    }
+
+    internal static (MethodData? methodData, string? error) ExecuteEntireMethodGeneratorMethod(
+        IMethodSymbol generatorMethod,
+        Compilation compilation)
+    {
+        IReadOnlyList<IMethodSymbol> allPartials = GetAllUnimplementedPartialMethods(compilation);
+        CSharpCompilation executableCompilation = BuildExecutionCompilation(allPartials, compilation);
+
+        using MemoryStream stream = new();
+        EmitResult emitResult = executableCompilation.Emit(stream);
+        if (!emitResult.Success)
+        {
+            string errors = string.Join("; ", emitResult.Diagnostics
+                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+                .Select(diagnostic => diagnostic.GetMessage()));
+            return (null, $"Compilation failed: {errors}");
+        }
+
+        stream.Position = 0;
+        AssemblyLoadContext? loadContext = null;
+        try
+        {
+            Dictionary<string, byte[]> compilationReferenceBytes = EmitCompilationReferences(compilation);
+
+            loadContext = new AssemblyLoadContext("__GeneratorExec", isCollectible: true);
+            Assembly? capturedAbstractionsAssembly = null;
+            loadContext.Resolving += (context, assemblyName) =>
+            {
+                PortableExecutableReference? match = compilation.References
+                    .OfType<PortableExecutableReference>()
+                    .FirstOrDefault(reference => reference.FilePath is not null && string.Equals(
+                        Path.GetFileNameWithoutExtension(reference.FilePath),
+                        assemblyName.Name,
+                        StringComparison.OrdinalIgnoreCase));
+                if (match?.FilePath != null)
+                    return context.LoadFromAssemblyPath(ResolveImplementationAssemblyPath(match.FilePath));
+
+                if (assemblyName.Name != null && compilationReferenceBytes.TryGetValue(assemblyName.Name, out byte[]? bytes))
+                {
+                    Assembly loaded = context.LoadFromStream(new MemoryStream(bytes));
+                    if (string.Equals(assemblyName.Name, Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        capturedAbstractionsAssembly = loaded;
+                    }
+                    return loaded;
+                }
+
+                return null;
+            };
+
+            Assembly assembly = loadContext.LoadFromStream(stream);
+
+            MetadataReference[] abstractionsMatchingReferences = compilation.References.Where(reference => reference.Display is not null && (
+                    reference.Display.Equals(Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase)
+                    || (reference is PortableExecutableReference peRef && peRef.FilePath is not null && Path.GetFileNameWithoutExtension(peRef.FilePath)
+                        .Equals(Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))))
+                .ToArray();
+
+            if (abstractionsMatchingReferences.Length == 0)
+            {
+                return (null, $"Could not find any reference matching '{Consts.AbstractionsAssemblyName}' in compilation references.");
+            }
+
+            PortableExecutableReference[] peMatchingReferences = abstractionsMatchingReferences.OfType<PortableExecutableReference>().ToArray();
+            CompilationReference[] csharpCompilationReference = abstractionsMatchingReferences.OfType<CompilationReference>().ToArray();
+            
+            Assembly abstractionsAssembly;
+            
+            if (peMatchingReferences.Length > 0)
+            {
+                PortableExecutableReference abstractionsReference = peMatchingReferences.First();
+                
+                if (string.IsNullOrEmpty(abstractionsReference.FilePath))
+                {
+                    return (null, $"The reference matching '{Consts.AbstractionsAssemblyName}' does not have a valid file path.");
+                }
+                
+                string abstractionsAssemblyPath = ResolveImplementationAssemblyPath(abstractionsReference.FilePath);
+                abstractionsAssembly = loadContext.LoadFromAssemblyPath(abstractionsAssemblyPath);
+            }
+            else if (csharpCompilationReference.Length > 0)
+            {
+                if (capturedAbstractionsAssembly != null)
+                {
+                    abstractionsAssembly = capturedAbstractionsAssembly;
+                }
+                else if (compilationReferenceBytes.TryGetValue(Consts.AbstractionsAssemblyName, out byte[]? abstractionBytes))
+                {
+                    abstractionsAssembly = loadContext.LoadFromStream(new MemoryStream(abstractionBytes));
+                }
+                else
+                {
+                    return (null, $"Found reference matching '{Consts.AbstractionsAssemblyName}' as a CompilationReference, but failed to emit it.");
+                }
+            }
+            else
+            {
+                return (null, $"Found references matching '{Consts.AbstractionsAssemblyName}' but none were usable.");
+            }
+            
+            Type? generatorStaticType = abstractionsAssembly.GetType(Consts.GenerateTypeFullName);
+            Type? recordingFactoryType = assembly.GetType(Consts.RecordingGeneratorsFactoryTypeFullName);
+            if (generatorStaticType == null || recordingFactoryType == null)
+            {
+                return (null, $"Could not find {Consts.GenerateTypeFullName} or {Consts.RecordingGeneratorsFactoryTypeFullName} types in compiled assembly");
+            }
+
+            object? recordingFactory = Activator.CreateInstance(recordingFactoryType);
+            PropertyInfo? currentGeneratorProperty = generatorStaticType.GetProperty(Consts.CurrentGeneratorPropertyName, BindingFlags.NonPublic | BindingFlags.Static);
+            currentGeneratorProperty?.SetValue(null, recordingFactory);
+
+            string typeName = generatorMethod.ContainingType.ToDisplayString();
+            Type? loadedType = assembly.GetType(typeName);
+            if (loadedType == null)
+            {
+                return (null, $"Could not find type '{typeName}' in compiled assembly");
+            }
+
+            MethodInfo? generatorMethodInfo = loadedType.GetMethod(generatorMethod.Name, BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            if (generatorMethodInfo == null)
+            {
+                return (null, $"Could not find method '{generatorMethod.Name}' in type '{typeName}'");
+            }
+
+            generatorMethodInfo.Invoke(null, null);
+
+            PropertyInfo? lastMethodRecordProperty = recordingFactoryType.GetProperty(Consts.LastMethodRecordPropertyName);
+            object? lastMethodRecord = lastMethodRecordProperty?.GetValue(recordingFactory);
+            if (lastMethodRecord == null)
+            {
+                return (null, "RecordingGeneratorsFactory did not produce a method record");
+            }
+
+            return (ExtractMethodData(lastMethodRecord, recordingFactory, recordingFactoryType), null);
         }
         catch (Exception ex)
         {
@@ -304,6 +457,58 @@ internal static class GeneratesMethodExecutionRuntime
         return new SwitchBodyData(pairs, hasDefaultCase);
     }
 
+    private static MethodData ExtractMethodData(object lastMethodRecord, object? recordingFactory, Type recordingFactoryType)
+    {
+        Type methodRecordType = lastMethodRecord.GetType();
+        string methodName = methodRecordType.GetProperty(nameof(MethodRecord.MethodName))?.GetValue(lastMethodRecord)?.ToString() ?? string.Empty;
+        string returnTypeName = methodRecordType.GetProperty(nameof(MethodRecord.ReturnTypeName))?.GetValue(lastMethodRecord)?.ToString() ?? "void";
+        object? constantValue = methodRecordType.GetProperty(nameof(MethodRecord.ConstantValue))?.GetValue(lastMethodRecord);
+
+        IList? parameterTypeNamesList = methodRecordType.GetProperty(nameof(MethodRecord.ParameterTypeNames))?.GetValue(lastMethodRecord) as IList;
+        List<string> parameterTypeNames = new();
+        if (parameterTypeNamesList != null)
+        {
+            foreach (object? paramTypeName in parameterTypeNamesList)
+            {
+                parameterTypeNames.Add(paramTypeName?.ToString() ?? string.Empty);
+            }
+        }
+
+        // Check if there's a switch body record
+        object? switchBodyObj = methodRecordType.GetProperty(nameof(MethodRecord.SwitchBody))?.GetValue(lastMethodRecord);
+        SwitchBodyData? switchBodyData = null;
+        if (switchBodyObj != null)
+        {
+            // Also check the LastRecord from the factory for case pairs
+            PropertyInfo? lastRecordProperty = recordingFactoryType.GetProperty(Consts.LastRecordPropertyName);
+            object? lastRecord = lastRecordProperty?.GetValue(recordingFactory);
+            if (lastRecord != null)
+            {
+                Type switchRecordType = lastRecord.GetType();
+                IList caseKeys = (switchRecordType.GetProperty(nameof(SwitchBodyRecord.CaseKeys))?.GetValue(lastRecord) as IList) ?? new List<object>();
+                IList caseValues = (switchRecordType.GetProperty(nameof(SwitchBodyRecord.CaseValues))?.GetValue(lastRecord) as IList) ?? new List<object?>();
+                bool hasDefaultCase = (bool)(switchRecordType.GetProperty(nameof(SwitchBodyRecord.HasDefaultCase))?.GetValue(lastRecord) ?? false);
+
+                List<(object key, string value)> pairs = new();
+                for (int index = 0; index < caseKeys.Count; index++)
+                {
+                    object key = caseKeys[index]!;
+                    string? value = index < caseValues.Count ? caseValues[index]?.ToString() : null;
+                    pairs.Add((key, value ?? "default"));
+                }
+
+                switchBodyData = new SwitchBodyData(pairs, hasDefaultCase);
+            }
+        }
+
+        return new MethodData(
+            methodName,
+            returnTypeName,
+            parameterTypeNames,
+            constantValue?.ToString(),
+            switchBodyData);
+    }
+
     private static Dictionary<string, byte[]> EmitCompilationReferences(Compilation compilation)
     {
         Dictionary<string, byte[]> result = new(StringComparer.OrdinalIgnoreCase);
@@ -338,7 +543,8 @@ internal static class GeneratesMethodExecutionRuntime
         IReadOnlyList<IMethodSymbol> allPartialMethods,
         Compilation compilation)
     {
-        string dummySource = BuildDummyImplementation(allPartialMethods);
+        List<EntireMethodDummy> entireMethodDummies = GetEntireMethodDummies(compilation);
+        string dummySource = BuildDummyImplementation(allPartialMethods, entireMethodDummies);
         string methodBuilderSource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.MethodBodyBuilder.cs");
         string recordingFactorySource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.RecordingGeneratorsFactory.cs");
         CSharpParseOptions parseOptions = compilation.SyntaxTrees.FirstOrDefault()?.Options as CSharpParseOptions
@@ -360,7 +566,111 @@ internal static class GeneratesMethodExecutionRuntime
         return reader.ReadToEnd();
     }
 
-    private static string BuildDummyImplementation(IEnumerable<IMethodSymbol> partialMethods)
+    private sealed record EntireMethodDummy(
+        string? Namespace,
+        string TypeName,
+        bool IsStatic,
+        TypeKind TypeKind,
+        string MethodName,
+        string ReturnType,
+        List<string> ParameterTypes);
+
+    private static List<EntireMethodDummy> GetEntireMethodDummies(Compilation compilation)
+    {
+        List<EntireMethodDummy> dummies = new();
+
+        foreach (SyntaxTree syntaxTree in compilation.SyntaxTrees)
+        {
+            SemanticModel semanticModel = compilation.GetSemanticModel(syntaxTree);
+            IEnumerable<MethodDeclarationSyntax> methods = syntaxTree.GetRoot().DescendantNodes()
+                .OfType<MethodDeclarationSyntax>();
+
+            foreach (MethodDeclarationSyntax method in methods)
+            {
+                if (semanticModel.GetDeclaredSymbol(method) is not IMethodSymbol methodSymbol)
+                    continue;
+
+                // Check if it has [MethodBodyGenerator] attribute and returns IMethodBodyGenerator
+                if (methodSymbol.ReturnType.ToDisplayString() != Consts.IMethodImplementationGeneratorFullName)
+                    continue;
+
+                AttributeData? attribute = methodSymbol.GetAttributes()
+                    .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == Consts.GeneratesMethodAttributeFullName);
+                if (attribute == null)
+                    continue;
+
+                string? targetMethodName = attribute.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                if (targetMethodName == null)
+                    continue;
+
+                // Check if the target method already exists as a partial method
+                INamedTypeSymbol containingType = methodSymbol.ContainingType;
+                bool hasPartialMethod = containingType.GetMembers(targetMethodName)
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.IsPartialDefinition);
+                if (hasPartialMethod)
+                    continue;
+
+                // This is an entire method generation target - extract signature from fluent API
+                EntireMethodDummy? dummy = ExtractMethodSignatureFromFluent(method, methodSymbol, targetMethodName);
+                if (dummy != null)
+                    dummies.Add(dummy);
+            }
+        }
+
+        return dummies;
+    }
+
+    private static EntireMethodDummy? ExtractMethodSignatureFromFluent(
+        MethodDeclarationSyntax method,
+        IMethodSymbol methodSymbol,
+        string targetMethodName)
+    {
+        INamedTypeSymbol containingType = methodSymbol.ContainingType;
+
+        // Try to extract return type and parameters from the fluent API calls
+        string returnType = "object";
+        List<string> parameterTypes = new();
+
+        IEnumerable<InvocationExpressionSyntax> invocations = method.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        foreach (InvocationExpressionSyntax invocation in invocations)
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+                continue;
+
+            string callName = memberAccess.Name.Identifier.Text;
+
+            if (callName == "WithReturnType" && memberAccess.Name is GenericNameSyntax returnTypeGeneric
+                && returnTypeGeneric.TypeArgumentList.Arguments.Count == 1)
+            {
+                returnType = returnTypeGeneric.TypeArgumentList.Arguments[0].ToString();
+            }
+
+            if (callName == "WithParameter" && memberAccess.Name is GenericNameSyntax paramGeneric
+                && paramGeneric.TypeArgumentList.Arguments.Count == 1)
+            {
+                parameterTypes.Add(paramGeneric.TypeArgumentList.Arguments[0].ToString());
+            }
+
+            if (callName == "WithVoidReturn")
+            {
+                returnType = "void";
+            }
+        }
+
+        return new EntireMethodDummy(
+            containingType.ContainingNamespace?.IsGlobalNamespace == false
+                ? containingType.ContainingNamespace.ToDisplayString()
+                : null,
+            containingType.Name,
+            containingType.IsStatic,
+            containingType.TypeKind,
+            targetMethodName,
+            returnType,
+            parameterTypes);
+    }
+
+    private static string BuildDummyImplementation(IEnumerable<IMethodSymbol> partialMethods, List<EntireMethodDummy> entireMethodDummies)
     {
         StringBuilder builder = new();
 
@@ -416,6 +726,45 @@ internal static class GeneratesMethodExecutionRuntime
             builder.AppendLine("}");
 
             if (namespaceName != null)
+            {
+                builder.AppendLine("}");
+            }
+        }
+
+        // Add dummy methods for entire method generation targets
+        IEnumerable<IGrouping<(string? Namespace, string TypeName, bool IsStatic, TypeKind TypeKind), EntireMethodDummy>> entireMethodGroups =
+            entireMethodDummies.GroupBy(d => (d.Namespace, d.TypeName, d.IsStatic, d.TypeKind));
+
+        foreach (IGrouping<(string? Namespace, string TypeName, bool IsStatic, TypeKind TypeKind), EntireMethodDummy> group in entireMethodGroups)
+        {
+            string? ns = group.Key.Namespace;
+            if (ns != null)
+            {
+                builder.AppendLine($"namespace {ns} {{");
+            }
+
+            string typeKeyword = group.Key.TypeKind switch
+            {
+                TypeKind.Struct => "struct",
+                _ => "class"
+            };
+
+            string typeModifiers = group.Key.IsStatic ? "static partial" : "partial";
+            builder.AppendLine($"{typeModifiers} {typeKeyword} {group.Key.TypeName} {{");
+
+            foreach (EntireMethodDummy dummy in group)
+            {
+                string staticModifier = group.Key.IsStatic ? "static " : "";
+                string parameters = string.Join(", ", dummy.ParameterTypes.Select((type, index) => $"{type} arg{index}"));
+                string body = dummy.ReturnType == "void"
+                    ? "{ }"
+                    : $"{{ return default({dummy.ReturnType})!; }}";
+                builder.AppendLine($"public {staticModifier}{dummy.ReturnType} {dummy.MethodName}({parameters}) {body}");
+            }
+
+            builder.AppendLine("}");
+
+            if (ns != null)
             {
                 builder.AppendLine("}");
             }

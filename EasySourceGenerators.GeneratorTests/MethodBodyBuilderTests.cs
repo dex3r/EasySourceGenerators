@@ -49,6 +49,8 @@ public class MethodBodyBodyBuilderTests
         public int TypedCreateImplementationCalls { get; private set; }
         public int ArgCreateImplementationCalls { get; private set; }
 
+        public IMethodBodyGeneratorWithNoParameter CreateImplementation() => new TrackingNoParamGenerator();
+
         public IMethodBodyBuilder ForMethod() => new MethodBodyBuilder(this);
 
         public IMethodBodyGenerator<TReturnType> CreateImplementation<TReturnType>()
@@ -64,9 +66,12 @@ public class MethodBodyBodyBuilderTests
         }
     }
 
+    private sealed class TrackingNoParamGenerator : IMethodBodyGeneratorWithNoParameter;
+
     private sealed class TrackingTypedImplementationGenerator<TReturnType> : IMethodBodyGenerator<TReturnType>
     {
-        public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body) => this;
+        public IMethodBodyGeneratorWithNoParameter BodyReturningConstantValue(Func<object> body) =>
+            new TrackingNoParamGenerator();
     }
 
     private sealed class TrackingArgImplementationGenerator<TArg1, TReturnType> : IMethodBodyGenerator<TArg1, TReturnType>

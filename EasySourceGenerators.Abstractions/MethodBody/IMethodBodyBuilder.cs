@@ -2,7 +2,7 @@
 
 // ReSharper disable TypeParameterCanBeVariant - not available for every overload, so not used for consistency
 
-public interface IMethodBodyBuilderStage1
+public interface IMethodBodyBuilderStage1 : IMethodBodyBuilder
 {
     IMethodBodyBuilderStage2 ForMethod();
 }
@@ -41,7 +41,7 @@ public interface IMethodBodyBuilderStage4ReturnVoid<TParam1>
     IMethodBodyGenerator UseProvidedBody(Action<TParam1> body);
 }
 
-public interface IMethodBodyBuilderStage4<TParam1, in TReturnType>
+public interface IMethodBodyBuilderStage4<TParam1, TReturnType>
 {
     IMethodBodyGenerator UseProvidedBody(Func<TParam1, TReturnType> body);
     IMethodBodyGenerator BodyRetuningConstant(Func<TReturnType> constantValueFactory);
