@@ -82,7 +82,7 @@ public class MockMethodImplementationGenerator<TArg1, TReturnType> : IMethodBody
 
 public class MockMethodImplementationGeneratorSwitchBody<TArg1, TReturnType> : IMethodBodyGeneratorSwitchBody<TArg1, TReturnType>
 {
-    public IMethodBodyGeneratorSwitchBodyCase<TArg1, TReturnType> ForCases(params TArg1[] cases)
+    public IMethodBodyGeneratorSwitchBodyCase<TArg1, TReturnType> ForCases(params object[] cases)
         => new MockMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType>();
 
     public IMethodBodyGeneratorSwitchBodyDefaultCase<TArg1, TReturnType> ForDefaultCase()
@@ -101,17 +101,11 @@ public class MockMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TRetu
 
 public class MockMethodImplementationGeneratorSwitchBodyCase<TArg1, TReturnType> : IMethodBodyGeneratorSwitchBodyCase<TArg1, TReturnType>
 {
-    public IMethodBodyGeneratorSwitchBodyCaseStage2<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> constantValueFactory)
-        => new MockMethodImplementationGeneratorSwitchBodyCaseStage2<TArg1, TReturnType>();
+    public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> ReturnConstantValue(Func<TArg1, TReturnType> constantValueFactory)
+        => new MockMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>();
 
-    public IMethodBodyGeneratorSwitchBodyCaseStage2<TArg1, TReturnType> UseProvidedBody(Func<TArg1, TReturnType> body)
-        => new MockMethodImplementationGeneratorSwitchBodyCaseStage2<TArg1, TReturnType>();
-}
-
-public class MockMethodImplementationGeneratorSwitchBodyCaseStage2<TArg1, TReturnType> : IMethodBodyGeneratorSwitchBodyCaseStage2<TArg1, TReturnType>
-{
-    public IMethodBodyGeneratorSwitchBodyDefaultCase<TArg1, TReturnType> ForDefaultCase()
-        => new MockMethodImplementationGeneratorSwitchBodyDefaultCase<TArg1, TReturnType>();
+    public IMethodBodyGeneratorSwitchBody<TArg1, TReturnType> UseProvidedBody(Func<TArg1, TReturnType> body)
+        => new MockMethodImplementationGeneratorSwitchBody<TArg1, TReturnType>();
 }
 
 public class MockMethodBodyBuilder : IMethodBodyBuilder

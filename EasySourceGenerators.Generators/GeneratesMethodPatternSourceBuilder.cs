@@ -175,7 +175,7 @@ internal static class GeneratesMethodPatternSourceBuilder
         return ExtractInnermostLambdaBody(bodyExpression);
     }
 
-    internal static string? ExtractDefaultExpressionFromFluentMethod(MethodDeclarationSyntax method)
+    internal static (string? expression, List<string> lambdaParamNames) ExtractDefaultExpressionAndParamNames(MethodDeclarationSyntax method)
     {
         IEnumerable<InvocationExpressionSyntax> invocations = method.DescendantNodes().OfType<InvocationExpressionSyntax>();
         foreach (InvocationExpressionSyntax invocation in invocations)
@@ -186,16 +186,57 @@ internal static class GeneratesMethodPatternSourceBuilder
             }
 
             string methodName = memberAccessExpression.Name.Identifier.Text;
-            if (methodName is not ("ReturnConstantValue" or "BodyReturningConstantValue"))
+            if (methodName is not ("ReturnConstantValue" or "BodyReturningConstantValue" or "UseProvidedBody" or "BodyRetuningConstant"))
             {
                 continue;
             }
 
-            ExpressionSyntax? argumentExpression = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-            return ExtractInnermostLambdaBody(argumentExpression);
+            // Check if this method is called on the result of ForDefaultCase()
+            if (memberAccessExpression.Expression is InvocationExpressionSyntax receiverInvocation
+                && receiverInvocation.Expression is MemberAccessExpressionSyntax receiverMember
+                && receiverMember.Name.Identifier.Text == "ForDefaultCase")
+            {
+                ExpressionSyntax? argumentExpression = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
+                List<string> paramNames = ExtractLambdaParameterNames(argumentExpression);
+                string? body = ExtractInnermostLambdaBody(argumentExpression);
+                return (body, paramNames);
+            }
         }
 
-        return null;
+        return (null, new List<string>());
+    }
+
+    internal static string? ExtractDefaultExpressionFromFluentMethod(MethodDeclarationSyntax method)
+    {
+        (string? expression, _) = ExtractDefaultExpressionAndParamNames(method);
+        return expression;
+    }
+
+    private static List<string> ExtractLambdaParameterNames(ExpressionSyntax? expression)
+    {
+        List<string> names = new();
+        while (expression != null)
+        {
+            if (expression is SimpleLambdaExpressionSyntax simpleLambda)
+            {
+                names.Add(simpleLambda.Parameter.Identifier.Text);
+                expression = simpleLambda.Body as ExpressionSyntax;
+            }
+            else if (expression is ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
+            {
+                foreach (ParameterSyntax parameter in parenthesizedLambda.ParameterList.Parameters)
+                {
+                    names.Add(parameter.Identifier.Text);
+                }
+                expression = parenthesizedLambda.Body as ExpressionSyntax;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return names;
     }
 
     private static string? ExtractInnermostLambdaBody(ExpressionSyntax? expression)
@@ -280,10 +321,14 @@ internal static class GeneratesMethodPatternSourceBuilder
     internal static string GenerateEntireMethodWithSwitch(
         INamedTypeSymbol containingType,
         MethodData methodData,
-        string? defaultExpression)
+        string? defaultExpression,
+        List<string> lambdaParamNames)
     {
         StringBuilder builder = new();
-        AppendNamespaceAndTypeHeaderForEntireMethod(builder, containingType, methodData);
+        List<string> paramNames = lambdaParamNames.Count >= methodData.ParameterTypeNames.Count
+            ? lambdaParamNames
+            : new List<string>();
+        AppendNamespaceAndTypeHeaderForEntireMethod(builder, containingType, methodData, paramNames);
 
         if (methodData.ParameterTypeNames.Count == 0)
         {
@@ -294,7 +339,7 @@ internal static class GeneratesMethodPatternSourceBuilder
             return builder.ToString();
         }
 
-        string switchParameterName = GetParameterName(methodData.ParameterTypeNames[0]);
+        string switchParameterName = paramNames.Count > 0 ? paramNames[0] : GetParameterName(methodData.ParameterTypeNames[0]);
         builder.AppendLine($"        switch ({switchParameterName})");
         builder.AppendLine("        {");
 
@@ -321,7 +366,7 @@ internal static class GeneratesMethodPatternSourceBuilder
         return builder.ToString();
     }
 
-    private static void AppendNamespaceAndTypeHeaderForEntireMethod(StringBuilder builder, INamedTypeSymbol containingType, MethodData methodData)
+    private static void AppendNamespaceAndTypeHeaderForEntireMethod(StringBuilder builder, INamedTypeSymbol containingType, MethodData methodData, List<string>? parameterNames = null)
     {
         builder.AppendLine("// <auto-generated/>");
         builder.AppendLine($"// Generated by {typeof(GeneratesMethodGenerator).FullName} for method '{methodData.MethodName}'.");
@@ -350,19 +395,21 @@ internal static class GeneratesMethodPatternSourceBuilder
 
         string returnTypeName = methodData.ReturnTypeName;
         string methodName = methodData.MethodName;
-        string parameters = BuildParameterList(methodData.ParameterTypeNames);
+        string parameters = BuildParameterList(methodData.ParameterTypeNames, parameterNames);
         string staticModifier = containingType.IsStatic ? "static " : "";
 
         builder.AppendLine($"    public {staticModifier}{returnTypeName} {methodName}({parameters})");
         builder.AppendLine("    {");
     }
 
-    private static string BuildParameterList(IReadOnlyList<string> parameterTypeNames)
+    private static string BuildParameterList(IReadOnlyList<string> parameterTypeNames, List<string>? parameterNames = null)
     {
         List<string> parameters = new();
         for (int index = 0; index < parameterTypeNames.Count; index++)
         {
-            string paramName = GetParameterName(parameterTypeNames[index]);
+            string paramName = (parameterNames != null && index < parameterNames.Count)
+                ? parameterNames[index]
+                : GetParameterName(parameterTypeNames[index]);
             parameters.Add($"{parameterTypeNames[index]} {paramName}");
         }
         return string.Join(", ", parameters);

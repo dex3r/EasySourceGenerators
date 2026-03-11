@@ -1,3 +1,4 @@
+using System;
 using EasySourceGenerators.Abstractions;
 
 namespace EasySourceGenerators.Generators;

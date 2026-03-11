@@ -145,14 +145,18 @@ internal static class GeneratesMethodGenerationPipeline
 
         if (data.SwitchBody != null)
         {
-            string? defaultExpression = data.SwitchBody.HasDefaultCase
-                ? GeneratesMethodPatternSourceBuilder.ExtractDefaultExpressionFromFluentMethod(methodInfo.Syntax)
-                : null;
+            (string? defaultExpression, List<string> lambdaParamNames) = GeneratesMethodPatternSourceBuilder.ExtractDefaultExpressionAndParamNames(methodInfo.Syntax);
+
+            if (!data.SwitchBody.HasDefaultCase)
+            {
+                defaultExpression = null;
+            }
 
             return GeneratesMethodPatternSourceBuilder.GenerateEntireMethodWithSwitch(
                 methodInfo.ContainingType,
                 data,
-                defaultExpression);
+                defaultExpression,
+                lambdaParamNames);
         }
 
         return GeneratesMethodPatternSourceBuilder.GenerateEntireMethodSimple(

@@ -539,7 +539,8 @@ internal static class GeneratesMethodExecutionRuntime
         IReadOnlyList<IMethodSymbol> allPartialMethods,
         Compilation compilation)
     {
-        string dummySource = BuildDummyImplementation(allPartialMethods);
+        List<EntireMethodDummy> entireMethodDummies = GetEntireMethodDummies(compilation);
+        string dummySource = BuildDummyImplementation(allPartialMethods, entireMethodDummies);
         string methodBuilderSource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.MethodBodyBuilder.cs");
         string recordingFactorySource = ReadEmbeddedResource($"{Consts.GeneratorsAssemblyName}.RecordingGeneratorsFactory.cs");
         CSharpParseOptions parseOptions = compilation.SyntaxTrees.FirstOrDefault()?.Options as CSharpParseOptions
@@ -561,7 +562,111 @@ internal static class GeneratesMethodExecutionRuntime
         return reader.ReadToEnd();
     }
 
-    private static string BuildDummyImplementation(IEnumerable<IMethodSymbol> partialMethods)
+    private sealed record EntireMethodDummy(
+        string? Namespace,
+        string TypeName,
+        bool IsStatic,
+        TypeKind TypeKind,
+        string MethodName,
+        string ReturnType,
+        List<string> ParameterTypes);
+
+    private static List<EntireMethodDummy> GetEntireMethodDummies(Compilation compilation)
+    {
+        List<EntireMethodDummy> dummies = new();
+
+        foreach (SyntaxTree syntaxTree in compilation.SyntaxTrees)
+        {
+            SemanticModel semanticModel = compilation.GetSemanticModel(syntaxTree);
+            IEnumerable<MethodDeclarationSyntax> methods = syntaxTree.GetRoot().DescendantNodes()
+                .OfType<MethodDeclarationSyntax>();
+
+            foreach (MethodDeclarationSyntax method in methods)
+            {
+                if (semanticModel.GetDeclaredSymbol(method) is not IMethodSymbol methodSymbol)
+                    continue;
+
+                // Check if it has [MethodBodyGenerator] attribute and returns IMethodBodyGenerator
+                if (methodSymbol.ReturnType.ToDisplayString() != Consts.IMethodImplementationGeneratorFullName)
+                    continue;
+
+                AttributeData? attribute = methodSymbol.GetAttributes()
+                    .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == Consts.GeneratesMethodAttributeFullName);
+                if (attribute == null)
+                    continue;
+
+                string? targetMethodName = attribute.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                if (targetMethodName == null)
+                    continue;
+
+                // Check if the target method already exists as a partial method
+                INamedTypeSymbol containingType = methodSymbol.ContainingType;
+                bool hasPartialMethod = containingType.GetMembers(targetMethodName)
+                    .OfType<IMethodSymbol>()
+                    .Any(m => m.IsPartialDefinition);
+                if (hasPartialMethod)
+                    continue;
+
+                // This is an entire method generation target - extract signature from fluent API
+                EntireMethodDummy? dummy = ExtractMethodSignatureFromFluent(method, methodSymbol, targetMethodName);
+                if (dummy != null)
+                    dummies.Add(dummy);
+            }
+        }
+
+        return dummies;
+    }
+
+    private static EntireMethodDummy? ExtractMethodSignatureFromFluent(
+        MethodDeclarationSyntax method,
+        IMethodSymbol methodSymbol,
+        string targetMethodName)
+    {
+        INamedTypeSymbol containingType = methodSymbol.ContainingType;
+
+        // Try to extract return type and parameters from the fluent API calls
+        string returnType = "object";
+        List<string> parameterTypes = new();
+
+        IEnumerable<InvocationExpressionSyntax> invocations = method.DescendantNodes().OfType<InvocationExpressionSyntax>();
+        foreach (InvocationExpressionSyntax invocation in invocations)
+        {
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
+                continue;
+
+            string callName = memberAccess.Name.Identifier.Text;
+
+            if (callName == "WithReturnType" && memberAccess.Name is GenericNameSyntax returnTypeGeneric
+                && returnTypeGeneric.TypeArgumentList.Arguments.Count == 1)
+            {
+                returnType = returnTypeGeneric.TypeArgumentList.Arguments[0].ToString();
+            }
+
+            if (callName == "WithParameter" && memberAccess.Name is GenericNameSyntax paramGeneric
+                && paramGeneric.TypeArgumentList.Arguments.Count == 1)
+            {
+                parameterTypes.Add(paramGeneric.TypeArgumentList.Arguments[0].ToString());
+            }
+
+            if (callName == "WithVoidReturn")
+            {
+                returnType = "void";
+            }
+        }
+
+        return new EntireMethodDummy(
+            containingType.ContainingNamespace?.IsGlobalNamespace == false
+                ? containingType.ContainingNamespace.ToDisplayString()
+                : null,
+            containingType.Name,
+            containingType.IsStatic,
+            containingType.TypeKind,
+            targetMethodName,
+            returnType,
+            parameterTypes);
+    }
+
+    private static string BuildDummyImplementation(IEnumerable<IMethodSymbol> partialMethods, List<EntireMethodDummy> entireMethodDummies)
     {
         StringBuilder builder = new();
 
@@ -617,6 +722,45 @@ internal static class GeneratesMethodExecutionRuntime
             builder.AppendLine("}");
 
             if (namespaceName != null)
+            {
+                builder.AppendLine("}");
+            }
+        }
+
+        // Add dummy methods for entire method generation targets
+        IEnumerable<IGrouping<(string? Namespace, string TypeName, bool IsStatic, TypeKind TypeKind), EntireMethodDummy>> entireMethodGroups =
+            entireMethodDummies.GroupBy(d => (d.Namespace, d.TypeName, d.IsStatic, d.TypeKind));
+
+        foreach (IGrouping<(string? Namespace, string TypeName, bool IsStatic, TypeKind TypeKind), EntireMethodDummy> group in entireMethodGroups)
+        {
+            string? ns = group.Key.Namespace;
+            if (ns != null)
+            {
+                builder.AppendLine($"namespace {ns} {{");
+            }
+
+            string typeKeyword = group.Key.TypeKind switch
+            {
+                TypeKind.Struct => "struct",
+                _ => "class"
+            };
+
+            string typeModifiers = group.Key.IsStatic ? "static partial" : "partial";
+            builder.AppendLine($"{typeModifiers} {typeKeyword} {group.Key.TypeName} {{");
+
+            foreach (EntireMethodDummy dummy in group)
+            {
+                string staticModifier = group.Key.IsStatic ? "static " : "";
+                string parameters = string.Join(", ", dummy.ParameterTypes.Select((type, index) => $"{type} arg{index}"));
+                string body = dummy.ReturnType == "void"
+                    ? "{ }"
+                    : $"{{ return default({dummy.ReturnType})!; }}";
+                builder.AppendLine($"public {staticModifier}{dummy.ReturnType} {dummy.MethodName}({parameters}) {body}");
+            }
+
+            builder.AppendLine("}");
+
+            if (ns != null)
             {
                 builder.AppendLine("}");
             }
