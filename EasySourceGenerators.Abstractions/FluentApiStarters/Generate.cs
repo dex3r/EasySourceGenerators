@@ -8,8 +8,7 @@ public static class Generate
     internal static IGeneratorsFactory CurrentGenerator
     {
         get => field ?? throw new InvalidOperationException("Trying to run Easy Source Generator in runtime or in environment other than" +
-                                                            " Easy Source Generators internals. Or something went very wrong with" +
-                                                            " Easy Source Generators internals.");
+                                                            " Easy Source Generators internals. Or something went very wrong.");
         [UsedImplicitly(ImplicitUseKindFlags.Assign, Reason = "Used in Easy Source Generators internals")] set;
     }
 

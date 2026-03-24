@@ -44,6 +44,6 @@ public interface IMethodBodyBuilderStage4ReturnVoid<TParam1>
 public interface IMethodBodyBuilderStage4<TParam1, in TReturnType>
 {
     IMethodBodyGenerator UseProvidedBody(Func<TParam1, TReturnType> body);
-    IMethodBodyGenerator BodyRetuningConstant(Func<TReturnType> constantValueFactory);
+    IMethodBodyGenerator BodyReturningConstant(Func<TReturnType> constantValueFactory);
     IMethodBodyGeneratorSwitchBody<TParam1, TReturnType> BodyWithSwitchStatement();
 }

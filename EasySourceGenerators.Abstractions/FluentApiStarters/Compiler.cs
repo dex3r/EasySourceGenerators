@@ -2,6 +2,7 @@
 
 namespace EasySourceGenerators.Abstractions;
 
+//TODO: Probably should be removed, since we are not going to go with the "Fluent body" approach.
 public static class Compiler
 {
     /// <summary>
