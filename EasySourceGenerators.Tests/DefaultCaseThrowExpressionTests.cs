@@ -4,44 +4,46 @@ using EasySourceGenerators.Abstractions;
 
 namespace EasySourceGenerators.Tests;
 
-[TestFixture]
-public class DefaultCaseThrowExpressionTests
-{
-    [Test]
-    public void SwitchDefaultThrowExpression_ThrowsExpectedExceptionAtRuntime()
-    {
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => DefaultCaseThrowExpressionClass.Foo(123))!;
-        Assert.That(exception.Message, Is.EqualTo("Unsupported input"));
-    }
-
-    [Test]
-    public void SwitchDefaultThrowExpression_ProducesThrowDefaultClauseInGeneratedCode()
-    {
-        string generatedCode = GeneratedCodeTestHelper.ReadGeneratedCode("DefaultCaseThrowExpressionClass_Foo.g.cs");
-        string expectedCode = """
-                              namespace EasySourceGenerators.Tests;
-
-                              static partial class DefaultCaseThrowExpressionClass
-                              {
-                                  public static partial int Foo(int input)
-                                  {
-                                      switch (input)
-                                      {
-                                          default: throw new InvalidOperationException("Unsupported input");
-                                      }
-                                  }
-                              }
-                              """.ReplaceLineEndings("\n").TrimEnd();
-
-        Assert.That(generatedCode, Is.EqualTo(expectedCode));
-    }
-}
-
-public static partial class DefaultCaseThrowExpressionClass
-{
-    public static partial int Foo(int input);
-
-    [GeneratesMethod(nameof(Foo))]
-    [SwitchDefault]
-    private static Func<int, int> Foo_Generator_Default() => _ => throw new InvalidOperationException("Unsupported input");
-}
+// NOTE: [SwitchDefault] attribute-based generation is commented out pending replacement
+// with a data-driven approach. These tests will be re-enabled with the new pattern.
+// [TestFixture]
+// public class DefaultCaseThrowExpressionTests
+// {
+//     [Test]
+//     public void SwitchDefaultThrowExpression_ThrowsExpectedExceptionAtRuntime()
+//     {
+//         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => DefaultCaseThrowExpressionClass.Foo(123))!;
+//         Assert.That(exception.Message, Is.EqualTo("Unsupported input"));
+//     }
+//
+//     [Test]
+//     public void SwitchDefaultThrowExpression_ProducesThrowDefaultClauseInGeneratedCode()
+//     {
+//         string generatedCode = GeneratedCodeTestHelper.ReadGeneratedCode("DefaultCaseThrowExpressionClass_Foo.g.cs");
+//         string expectedCode = """
+//                                namespace EasySourceGenerators.Tests;
+//
+//                                static partial class DefaultCaseThrowExpressionClass
+//                                {
+//                                    public static partial int Foo(int input)
+//                                    {
+//                                        switch (input)
+//                                        {
+//                                            default: throw new InvalidOperationException("Unsupported input");
+//                                        }
+//                                    }
+//                                }
+//                                """.ReplaceLineEndings("\n").TrimEnd();
+//
+//         Assert.That(generatedCode, Is.EqualTo(expectedCode));
+//     }
+// }
+//
+// public static partial class DefaultCaseThrowExpressionClass
+// {
+//     public static partial int Foo(int input);
+//
+//     [GeneratesMethod(nameof(Foo))]
+//     [SwitchDefault]
+//     private static Func<int, int> Foo_Generator_Default() => _ => throw new InvalidOperationException("Unsupported input");
+// }

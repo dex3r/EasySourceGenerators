@@ -89,83 +89,85 @@ public class GeneratorDiagnosticsTests
 
     // -----------------------------------------------------------------------
     // MSGH005 – Generator method has too many parameters (switch pattern)
+    // NOTE: [SwitchCase] attribute-based tests commented out pending replacement
+    // with a data-driven approach.
     // -----------------------------------------------------------------------
 
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithMoreThanOneParameter_EmitsMSGH005()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithMoreThanOneParameter_EmitsMSGH005()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetValue_Generator(int key, string extraParam) => 42;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Diagnostic? msgh005 = diagnostics.FirstOrDefault(d => d.Id == "MSGH005");
+    //     Assert.That(msgh005, Is.Not.Null, "Expected MSGH005 diagnostic for generator method with too many parameters");
+    //     Assert.That(msgh005!.GetMessage(), Does.Contain("GetValue_Generator"),
+    //         "Error message should mention the generator method name");
+    //     Assert.That(msgh005.GetMessage(), Does.Contain("2"),
+    //         "Error message should mention the number of parameters");
+    // }
 
-            namespace TestNamespace;
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithOneParameter_DoesNotEmitMSGH005()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetValue_Generator(int key) => 42;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Assert.That(diagnostics.Any(d => d.Id == "MSGH005"), Is.False,
+    //         "Should not emit MSGH005 for a generator method with exactly one parameter");
+    // }
 
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: 1)]
-                private static int GetValue_Generator(int key, string extraParam) => 42;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Diagnostic? msgh005 = diagnostics.FirstOrDefault(d => d.Id == "MSGH005");
-        Assert.That(msgh005, Is.Not.Null, "Expected MSGH005 diagnostic for generator method with too many parameters");
-        Assert.That(msgh005!.GetMessage(), Does.Contain("GetValue_Generator"),
-            "Error message should mention the generator method name");
-        Assert.That(msgh005.GetMessage(), Does.Contain("2"),
-            "Error message should mention the number of parameters");
-    }
-
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithOneParameter_DoesNotEmitMSGH005()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: 1)]
-                private static int GetValue_Generator(int key) => 42;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Assert.That(diagnostics.Any(d => d.Id == "MSGH005"), Is.False,
-            "Should not emit MSGH005 for a generator method with exactly one parameter");
-    }
-
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithZeroParameters_DoesNotEmitMSGH005()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: 1)]
-                private static int GetValue_Generator() => 42;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Assert.That(diagnostics.Any(d => d.Id == "MSGH005"), Is.False,
-            "Should not emit MSGH005 for a generator method with zero parameters");
-    }
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithZeroParameters_DoesNotEmitMSGH005()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetValue_Generator() => 42;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Assert.That(diagnostics.Any(d => d.Id == "MSGH005"), Is.False,
+    //         "Should not emit MSGH005 for a generator method with zero parameters");
+    // }
 
     // -----------------------------------------------------------------------
     // MSGH004 – Generator method execution failed (unfinished fluent API)
@@ -201,104 +203,108 @@ public class GeneratorDiagnosticsTests
 
     // -----------------------------------------------------------------------
     // Partial method called from fluent API / generator execution
+    // NOTE: [SwitchCase] attribute-based tests commented out pending replacement
+    // with a data-driven approach.
     // -----------------------------------------------------------------------
 
-    [Test]
-    public void GeneratesMethod_PartialMethodCalledInsideGenerator_EmitsMSGH004WithHelpfulMessage()
-    {
-        // The generator method calls a partial method that hasn't been implemented yet.
-        // The dummy implementation should throw PartialMethodCalledDuringGenerationException,
-        // which should be surfaced as MSGH004 with an informative message.
-        string source = """
-            using EasySourceGenerators.Abstractions;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                public static partial string GetLabel(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: 1)]
-                private static int GetValue_Generator(int key)
-                {
-                    // Calling the other partial method from inside a generator — this should throw.
-                    string label = GetLabel(key);
-                    return label.Length;
-                }
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Diagnostic? msgh004 = diagnostics.FirstOrDefault(d => d.Id == "MSGH004");
-        Assert.That(msgh004, Is.Not.Null,
-            "Expected MSGH004 when a partial method is called inside a generator method");
-        Assert.That(msgh004!.GetMessage(), Does.Contain("GetValue_Generator"),
-            "Error message should mention the generator method name");
-        Assert.That(msgh004.GetMessage(), Does.Contain("PartialMethodCalledDuringGenerationException")
-            .Or.Contain("GetLabel")
-            .Or.Contain("partial method"),
-            "Error message should hint that a partial method was called during generation");
-    }
+    // [Test]
+    // public void GeneratesMethod_PartialMethodCalledInsideGenerator_EmitsMSGH004WithHelpfulMessage()
+    // {
+    //     // The generator method calls a partial method that hasn't been implemented yet.
+    //     // The dummy implementation should throw PartialMethodCalledDuringGenerationException,
+    //     // which should be surfaced as MSGH004 with an informative message.
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             public static partial string GetLabel(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetValue_Generator(int key)
+    //             {
+    //                 // Calling the other partial method from inside a generator — this should throw.
+    //                 string label = GetLabel(key);
+    //                 return label.Length;
+    //             }
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Diagnostic? msgh004 = diagnostics.FirstOrDefault(d => d.Id == "MSGH004");
+    //     Assert.That(msgh004, Is.Not.Null,
+    //         "Expected MSGH004 when a partial method is called inside a generator method");
+    //     Assert.That(msgh004!.GetMessage(), Does.Contain("GetValue_Generator"),
+    //         "Error message should mention the generator method name");
+    //     Assert.That(msgh004.GetMessage(), Does.Contain("PartialMethodCalledDuringGenerationException")
+    //         .Or.Contain("GetLabel")
+    //         .Or.Contain("partial method"),
+    //         "Error message should hint that a partial method was called during generation");
+    // }
 
     // -----------------------------------------------------------------------
     // MSGH006 – SwitchCase argument type mismatch
+    // NOTE: [SwitchCase] attribute-based tests commented out pending replacement
+    // with a data-driven approach.
     // -----------------------------------------------------------------------
 
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithWrongArgumentType_EmitsMSGH006()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithWrongArgumentType_EmitsMSGH006()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: "aaa")]
+    //             private static int GetValue_Generator(int key) => 42;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Diagnostic? msgh006 = diagnostics.FirstOrDefault(d => d.Id == "MSGH006");
+    //     Assert.That(msgh006, Is.Not.Null, "Expected MSGH006 diagnostic for SwitchCase argument type mismatch");
+    //     Assert.That(msgh006!.GetMessage(), Does.Contain("string"),
+    //         "Error message should mention the provided type");
+    //     Assert.That(msgh006.GetMessage(), Does.Contain("int"),
+    //         "Error message should mention the expected parameter type");
+    // }
 
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: "aaa")]
-                private static int GetValue_Generator(int key) => 42;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Diagnostic? msgh006 = diagnostics.FirstOrDefault(d => d.Id == "MSGH006");
-        Assert.That(msgh006, Is.Not.Null, "Expected MSGH006 diagnostic for SwitchCase argument type mismatch");
-        Assert.That(msgh006!.GetMessage(), Does.Contain("string"),
-            "Error message should mention the provided type");
-        Assert.That(msgh006.GetMessage(), Does.Contain("int"),
-            "Error message should mention the expected parameter type");
-    }
-
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithCorrectArgumentType_DoesNotEmitMSGH006()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetValue(int key);
-
-                [GeneratesMethod(nameof(GetValue))]
-                [SwitchCase(arg1: 1)]
-                private static int GetValue_Generator(int key) => 42;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Assert.That(diagnostics.Any(d => d.Id == "MSGH006"), Is.False,
-            "Should not emit MSGH006 when SwitchCase argument type matches the parameter type");
-    }
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithCorrectArgumentType_DoesNotEmitMSGH006()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetValue(int key);
+    //
+    //             [GeneratesMethod(nameof(GetValue))]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetValue_Generator(int key) => 42;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Assert.That(diagnostics.Any(d => d.Id == "MSGH006"), Is.False,
+    //         "Should not emit MSGH006 when SwitchCase argument type matches the parameter type");
+    // }
 
     // -----------------------------------------------------------------------
     // Type mismatch between generator return type and partial method return type
@@ -358,30 +364,32 @@ public class GeneratorDiagnosticsTests
             "Valid generator configuration should produce no error diagnostics");
     }
 
-    [Test]
-    public void GeneratesMethod_SwitchCasePattern_ValidConfiguration_ProducesNoDiagnosticErrors()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial int GetPiDigit(int index);
-
-                [GeneratesMethod(nameof(GetPiDigit))]
-                [SwitchCase(arg1: 0)]
-                [SwitchCase(arg1: 1)]
-                private static int GetPiDigit_Generator(int index) => index == 0 ? 3 : 1;
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Assert.That(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error), Is.Empty,
-            "Valid switch-case generator configuration should produce no error diagnostics");
-    }
+    // NOTE: [SwitchCase] attribute-based tests commented out pending replacement
+    // with a data-driven approach.
+    // [Test]
+    // public void GeneratesMethod_SwitchCasePattern_ValidConfiguration_ProducesNoDiagnosticErrors()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial int GetPiDigit(int index);
+    //
+    //             [GeneratesMethod(nameof(GetPiDigit))]
+    //             [SwitchCase(arg1: 0)]
+    //             [SwitchCase(arg1: 1)]
+    //             private static int GetPiDigit_Generator(int index) => index == 0 ? 3 : 1;
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Assert.That(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error), Is.Empty,
+    //         "Valid switch-case generator configuration should produce no error diagnostics");
+    // }
 
     // -----------------------------------------------------------------------
     // CompilationReference scenario – simulates Rider's code inspector
@@ -452,35 +460,37 @@ public class GeneratorDiagnosticsTests
 
     // -----------------------------------------------------------------------
     // Bool switch parameter – valid configuration
+    // NOTE: [SwitchCase] attribute-based tests commented out pending replacement
+    // with a data-driven approach.
     // -----------------------------------------------------------------------
 
-    [Test]
-    public void GeneratesMethod_SwitchCaseWithBoolParameter_ValidConfiguration_ProducesNoDiagnosticErrors()
-    {
-        string source = """
-            using EasySourceGenerators.Abstractions;
-            using System;
-
-            namespace TestNamespace;
-
-            public static partial class MyClass
-            {
-                public static partial string GetLabel(bool flag);
-
-                [GeneratesMethod(nameof(GetLabel))]
-                [SwitchCase(arg1: true)]
-                [SwitchCase(arg1: false)]
-                private static string GetLabel_Generator(bool flag) => flag ? "Yes" : "No";
-
-                [GeneratesMethod(nameof(GetLabel))]
-                [SwitchDefault]
-                private static Func<bool, string> GetLabel_Default() => _ => "Unknown";
-            }
-            """;
-
-        ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
-
-        Assert.That(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error), Is.Empty,
-            "Valid bool switch case generator should produce no error diagnostics");
-    }
+    // [Test]
+    // public void GeneratesMethod_SwitchCaseWithBoolParameter_ValidConfiguration_ProducesNoDiagnosticErrors()
+    // {
+    //     string source = """
+    //         using EasySourceGenerators.Abstractions;
+    //         using System;
+    //
+    //         namespace TestNamespace;
+    //
+    //         public static partial class MyClass
+    //         {
+    //             public static partial string GetLabel(bool flag);
+    //
+    //             [GeneratesMethod(nameof(GetLabel))]
+    //             [SwitchCase(arg1: true)]
+    //             [SwitchCase(arg1: false)]
+    //             private static string GetLabel_Generator(bool flag) => flag ? "Yes" : "No";
+    //
+    //             [GeneratesMethod(nameof(GetLabel))]
+    //             [SwitchDefault]
+    //             private static Func<bool, string> GetLabel_Default() => _ => "Unknown";
+    //         }
+    //         """;
+    //
+    //     ImmutableArray<Diagnostic> diagnostics = GeneratorTestHelper.GetGeneratorOnlyDiagnostics(source);
+    //
+    //     Assert.That(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error), Is.Empty,
+    //         "Valid bool switch case generator should produce no error diagnostics");
+    // }
 }

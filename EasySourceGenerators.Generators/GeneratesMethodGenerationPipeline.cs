@@ -47,24 +47,25 @@ internal static class GeneratesMethodGenerationPipeline
         IReadOnlyList<IMethodSymbol> allPartials,
         Compilation compilation)
     {
-        bool hasSwitchCase = methods.Any(method => HasAttribute(method.Symbol, SwitchCaseAttributeFullName));
-        bool hasSwitchDefault = methods.Any(method => HasAttribute(method.Symbol, SwitchDefaultAttributeFullName));
         bool isFluentPattern = methods.Count == 1 && methods[0].Symbol.ReturnType.ToDisplayString() == IMethodImplementationGeneratorFullName;
 
-        // NOTE: Explicit [SwitchCase] attribute-based generation is commented out and will be
-        // replaced with a new approach in a future PR. The data abstraction layer will be
-        // extended to support the new pattern. For now, only fluent and simple patterns are
-        // supported through the data layer.
-        if (hasSwitchCase || hasSwitchDefault)
-        {
-            return GeneratesMethodPatternSourceBuilder.GenerateFromSwitchAttributes(
-                context,
-                methods,
-                firstMethod.PartialMethod,
-                firstMethod.ContainingType,
-                allPartials,
-                compilation);
-        }
+        // NOTE: Explicit [SwitchCase]/[SwitchDefault] attribute-based generation is commented out.
+        // This pattern will be replaced with a data-driven approach in a future PR.
+        // The data abstraction layer (DataMethodBody, DataMethodBodyBuilders, DataGeneratorsFactory)
+        // will be extended to support the new attribute-based pattern.
+        // bool hasSwitchCase = methods.Any(method => HasAttribute(method.Symbol, SwitchCaseAttributeFullName));
+        // bool hasSwitchDefault = methods.Any(method => HasAttribute(method.Symbol, SwitchDefaultAttributeFullName));
+        //
+        // if (hasSwitchCase || hasSwitchDefault)
+        // {
+        //     return GeneratesMethodPatternSourceBuilder.GenerateFromSwitchAttributes(
+        //         context,
+        //         methods,
+        //         firstMethod.PartialMethod,
+        //         firstMethod.ContainingType,
+        //         allPartials,
+        //         compilation);
+        // }
 
         if (isFluentPattern)
         {
