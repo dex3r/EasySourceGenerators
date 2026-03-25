@@ -29,6 +29,19 @@ internal static class GeneratesMethodPatternSourceBuilder
     }
 
     /// <summary>
+    /// Generates a complete C# source file containing a partial method implementation
+    /// with the given body lines (already indented to the method body level).
+    /// </summary>
+    internal static string GeneratePartialMethodWithBody(
+        INamedTypeSymbol containingType,
+        IMethodSymbol partialMethod,
+        string bodyLines)
+    {
+        PartialMethodEmitData emitData = RoslynSymbolDataMapper.ToPartialMethodEmitData(containingType, partialMethod);
+        return PartialMethodSourceEmitter.EmitWithBody(emitData, bodyLines);
+    }
+
+    /// <summary>
     /// Formats a string value as a C# literal expression based on the target return type.
     /// Delegates to <see cref="CSharpLiteralFormatter.FormatValueAsLiteral"/>.
     /// </summary>

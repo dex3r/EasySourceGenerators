@@ -96,8 +96,9 @@ internal static class GeneratesMethodGenerationPipeline
     }
 
     /// <summary>
-    /// Generates source code from a fluent body pattern, executing the generator method
-    /// and extracting the return value from the fluent API result.
+    /// Generates source code from a fluent body pattern. First attempts to extract the delegate
+    /// body from a <c>UseProvidedBody</c> call in the syntax tree. If no such call is found,
+    /// falls back to executing the generator method and extracting the return value.
     /// </summary>
     private static string GenerateFromFluentBodyPattern(
         SourceProductionContext context,
@@ -106,6 +107,18 @@ internal static class GeneratesMethodGenerationPipeline
         INamedTypeSymbol containingType,
         Compilation compilation)
     {
+        string? delegateBody = DelegateBodySyntaxExtractor.TryExtractDelegateBody(methodInfo.Syntax);
+        if (delegateBody != null)
+        {
+            bool isVoidReturn = partialMethod.ReturnType.SpecialType == SpecialType.System_Void;
+            string bodyLines = FormatDelegateBodyForEmit(delegateBody, isVoidReturn);
+
+            return GeneratesMethodPatternSourceBuilder.GeneratePartialMethodWithBody(
+                containingType,
+                partialMethod,
+                bodyLines);
+        }
+
         (FluentBodyResult? result, string? error) = GeneratesMethodExecutionRuntime.ExecuteFluentBodyGeneratorMethod(
             methodInfo.Symbol,
             partialMethod,
@@ -125,6 +138,27 @@ internal static class GeneratesMethodGenerationPipeline
             containingType,
             partialMethod,
             result!.ReturnValue);
+    }
+
+    /// <summary>
+    /// Formats the extracted delegate body for emission. Expression bodies are wrapped in
+    /// <c>return {expr};</c>. Block bodies are used as-is (already re-indented by the extractor).
+    /// </summary>
+    private static string FormatDelegateBodyForEmit(string delegateBody, bool isVoidReturn)
+    {
+        bool isBlockBody = delegateBody.Contains("\n");
+
+        if (isBlockBody)
+        {
+            return delegateBody;
+        }
+
+        if (isVoidReturn)
+        {
+            return $"        {delegateBody};";
+        }
+
+        return $"        return {delegateBody};";
     }
 
     /// <summary>

@@ -57,7 +57,7 @@ public class DelegateBodyTests
                               {
                                   public static partial int PartialMethod(int someParam)
                                   {
-                                      if (someParamHere > 0)
+                                      if (someParam > 0)
                                       {
                                           return 42;
                                       }
@@ -83,7 +83,7 @@ public class DelegateBodyTests
                               {
                                   public static partial int PartialMethod(int someParam)
                                   {
-                                      switch (someParamHere)
+                                      switch (someParam)
                                       {
                                           case -1: return 6;
                                           case 0: return 7;
@@ -110,7 +110,7 @@ public class DelegateBodyTests
                                   {
                                       int interResult = 0;
                                       
-                                      switch (someParamHere)
+                                      switch (someParam)
                                       {
                                           case -1: interResult = 6; break;
                                           case 0: interResult = 7; break;
@@ -157,9 +157,9 @@ public static partial class DelegateBodyTestClass_WithIf
     public static IMethodBodyGenerator JustReturnConstantGenerator() =>
         Generate.MethodBody()
             .ForMethod().WithReturnType<int>().WithParameter<int>()
-            .UseProvidedBody(someParamHere =>
+            .UseProvidedBody(someParam =>
             {
-                if (someParamHere > 0)
+                if (someParam > 0)
                 {
                     return 42;
                 }
@@ -178,9 +178,9 @@ public static partial class DelegateBodyTestClass_WithSwitch
     public static IMethodBodyGenerator JustReturnConstantGenerator() =>
         Generate.MethodBody()
             .ForMethod().WithReturnType<int>().WithParameter<int>()
-            .UseProvidedBody(someParamHere =>
+            .UseProvidedBody(someParam =>
             {
-                switch (someParamHere)
+                switch (someParam)
                 {
                     case -1: return 6;
                     case 0: return 7;
@@ -198,11 +198,11 @@ public static partial class DelegateBodyTestClass_WithComplexBody
     public static IMethodBodyGenerator JustReturnConstantGenerator() =>
         Generate.MethodBody()
             .ForMethod().WithReturnType<int>().WithParameter<int>()
-            .UseProvidedBody(someParamHere =>
+            .UseProvidedBody(someParam =>
             {
                 int interResult = 0;
                 
-                switch (someParamHere)
+                switch (someParam)
                 {
                     case -1: interResult = 6; break;
                     case 0: interResult = 7; break;

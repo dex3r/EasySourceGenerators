@@ -27,6 +27,19 @@ internal static class PartialMethodSourceEmitter
     }
 
     /// <summary>
+    /// Generates a complete C# source file containing a partial method implementation
+    /// with the given body lines (already indented to the method body level).
+    /// </summary>
+    internal static string EmitWithBody(PartialMethodEmitData data, string bodyLines)
+    {
+        StringBuilder builder = new();
+        AppendFileHeader(builder, data);
+        builder.AppendLine(bodyLines);
+        AppendClosingBraces(builder);
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// Appends the auto-generated file header, namespace declaration, type declaration,
     /// and method signature opening to the <see cref="StringBuilder"/>.
     /// </summary>
