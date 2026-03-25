@@ -8,28 +8,13 @@ namespace EasySourceGenerators.Generators.SourceEmitting;
 internal static class CSharpAccessibilityKeyword
 {
     /// <summary>
-    /// Returns the C# keyword for the given accessibility level.
-    /// Returns <c>"private"</c> for <see cref="Accessibility.NotApplicable"/> and unrecognized values.
-    /// </summary>
-    internal static string From(Accessibility accessibility)
-    {
-        return accessibility switch
-        {
-            Accessibility.Public => "public",
-            Accessibility.Protected => "protected",
-            Accessibility.Internal => "internal",
-            Accessibility.ProtectedOrInternal => "protected internal",
-            Accessibility.ProtectedAndInternal => "private protected",
-            _ => "private"
-        };
-    }
-
-    /// <summary>
-    /// Returns the C# keyword for the given accessibility level, or an empty string
+    /// Converts a Roslyn <see cref="Accessibility"/> value to its C# keyword representation.
+    /// When <paramref name="defaultToPrivate"/> is <c>true</c> (the default), returns <c>"private"</c>
     /// for <see cref="Accessibility.Private"/> and unrecognized values.
-    /// Used in contexts where the <c>private</c> keyword is implicit (e.g., dummy implementations).
+    /// When <c>false</c>, returns an empty string instead — useful in contexts where
+    /// the <c>private</c> keyword is implicit (e.g., dummy implementations).
     /// </summary>
-    internal static string FromOrEmpty(Accessibility accessibility)
+    internal static string ToKeyword(Accessibility accessibility, bool defaultToPrivate = true)
     {
         return accessibility switch
         {
@@ -38,7 +23,7 @@ internal static class CSharpAccessibilityKeyword
             Accessibility.Internal => "internal",
             Accessibility.ProtectedOrInternal => "protected internal",
             Accessibility.ProtectedAndInternal => "private protected",
-            _ => ""
+            _ => defaultToPrivate ? "private" : ""
         };
     }
 }

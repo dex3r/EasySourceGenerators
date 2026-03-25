@@ -7,105 +7,105 @@ namespace EasySourceGenerators.GeneratorTests;
 public class CSharpAccessibilityKeywordTests
 {
     // -----------------------------------------------------------------------
-    // From (returns "private" as default)
+    // ToKeyword with defaultToPrivate = true (default)
     // -----------------------------------------------------------------------
 
     [Test]
-    public void From_Public_ReturnsPublic()
+    public void ToKeyword_Public_ReturnsPublic()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.Public);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Public);
 
         Assert.That(result, Is.EqualTo("public"));
     }
 
     [Test]
-    public void From_Protected_ReturnsProtected()
+    public void ToKeyword_Protected_ReturnsProtected()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.Protected);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Protected);
 
         Assert.That(result, Is.EqualTo("protected"));
     }
 
     [Test]
-    public void From_Internal_ReturnsInternal()
+    public void ToKeyword_Internal_ReturnsInternal()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.Internal);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Internal);
 
         Assert.That(result, Is.EqualTo("internal"));
     }
 
     [Test]
-    public void From_ProtectedOrInternal_ReturnsProtectedInternal()
+    public void ToKeyword_ProtectedOrInternal_ReturnsProtectedInternal()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.ProtectedOrInternal);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.ProtectedOrInternal);
 
         Assert.That(result, Is.EqualTo("protected internal"));
     }
 
     [Test]
-    public void From_ProtectedAndInternal_ReturnsPrivateProtected()
+    public void ToKeyword_ProtectedAndInternal_ReturnsPrivateProtected()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.ProtectedAndInternal);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.ProtectedAndInternal);
 
         Assert.That(result, Is.EqualTo("private protected"));
     }
 
     [Test]
-    public void From_Private_ReturnsPrivate()
+    public void ToKeyword_Private_ReturnsPrivate()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.Private);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Private);
 
         Assert.That(result, Is.EqualTo("private"));
     }
 
     [Test]
-    public void From_NotApplicable_ReturnsPrivate()
+    public void ToKeyword_NotApplicable_ReturnsPrivate()
     {
-        string result = CSharpAccessibilityKeyword.From(Accessibility.NotApplicable);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.NotApplicable);
 
         Assert.That(result, Is.EqualTo("private"));
     }
 
     // -----------------------------------------------------------------------
-    // FromOrEmpty (returns "" as default)
+    // ToKeyword with defaultToPrivate = false
     // -----------------------------------------------------------------------
 
     [Test]
-    public void FromOrEmpty_Public_ReturnsPublic()
+    public void ToKeyword_DefaultToPrivateFalse_Public_ReturnsPublic()
     {
-        string result = CSharpAccessibilityKeyword.FromOrEmpty(Accessibility.Public);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Public, defaultToPrivate: false);
 
         Assert.That(result, Is.EqualTo("public"));
     }
 
     [Test]
-    public void FromOrEmpty_Protected_ReturnsProtected()
+    public void ToKeyword_DefaultToPrivateFalse_Protected_ReturnsProtected()
     {
-        string result = CSharpAccessibilityKeyword.FromOrEmpty(Accessibility.Protected);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Protected, defaultToPrivate: false);
 
         Assert.That(result, Is.EqualTo("protected"));
     }
 
     [Test]
-    public void FromOrEmpty_Internal_ReturnsInternal()
+    public void ToKeyword_DefaultToPrivateFalse_Internal_ReturnsInternal()
     {
-        string result = CSharpAccessibilityKeyword.FromOrEmpty(Accessibility.Internal);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Internal, defaultToPrivate: false);
 
         Assert.That(result, Is.EqualTo("internal"));
     }
 
     [Test]
-    public void FromOrEmpty_Private_ReturnsEmptyString()
+    public void ToKeyword_DefaultToPrivateFalse_Private_ReturnsEmptyString()
     {
-        string result = CSharpAccessibilityKeyword.FromOrEmpty(Accessibility.Private);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.Private, defaultToPrivate: false);
 
         Assert.That(result, Is.EqualTo(""));
     }
 
     [Test]
-    public void FromOrEmpty_NotApplicable_ReturnsEmptyString()
+    public void ToKeyword_DefaultToPrivateFalse_NotApplicable_ReturnsEmptyString()
     {
-        string result = CSharpAccessibilityKeyword.FromOrEmpty(Accessibility.NotApplicable);
+        string result = CSharpAccessibilityKeyword.ToKeyword(Accessibility.NotApplicable, defaultToPrivate: false);
 
         Assert.That(result, Is.EqualTo(""));
     }

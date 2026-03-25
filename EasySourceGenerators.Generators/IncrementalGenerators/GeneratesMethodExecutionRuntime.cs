@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
@@ -22,7 +21,9 @@ internal sealed record FluentBodyResult(
 
 /// <summary>
 /// Orchestrates the execution of generator methods at compile time.
-/// Delegates compilation and assembly loading to <see cref="GeneratorAssemblyExecutor"/>,
+/// Delegates compilation to <see cref="GeneratorAssemblyExecutor"/>,
+/// abstractions resolution to <see cref="AbstractionsAssemblyResolver"/>,
+/// factory setup to <see cref="DataGeneratorsFactorySetup"/>,
 /// and data extraction to <see cref="BodyGenerationDataExtractor"/>.
 /// </summary>
 internal static class GeneratesMethodExecutionRuntime
@@ -61,33 +62,25 @@ internal static class GeneratesMethodExecutionRuntime
         try
         {
             (Assembly? abstractionsAssembly, string? abstractionsError) =
-                ResolveAbstractionsAssembly(context, compilation);
+                AbstractionsAssemblyResolver.Resolve(context, compilation);
             if (abstractionsError != null)
             {
                 return (null, abstractionsError);
             }
 
-            string? setupError = SetupDataGeneratorsFactory(context.Assembly, abstractionsAssembly!, context);
+            string? setupError = DataGeneratorsFactorySetup.Setup(context.Assembly, abstractionsAssembly!);
             if (setupError != null)
             {
                 return (null, setupError);
             }
 
-            string typeName = generatorMethod.ContainingType.ToDisplayString();
-            (Type? loadedType, string? typeError) = GeneratorAssemblyExecutor.FindType(context.Assembly, typeName);
-            if (typeError != null)
+            (object? methodResult, string? invokeError) =
+                InvokeStaticMethod(context.Assembly, generatorMethod);
+            if (invokeError != null)
             {
-                return (null, typeError);
+                return (null, invokeError);
             }
 
-            (MethodInfo? methodInfo, string? methodError) =
-                GeneratorAssemblyExecutor.FindStaticMethod(loadedType!, generatorMethod.Name, typeName);
-            if (methodError != null)
-            {
-                return (null, methodError);
-            }
-
-            object? methodResult = methodInfo!.Invoke(null, null);
             if (methodResult == null)
             {
                 return (null, "Fluent body generator method returned null");
@@ -172,105 +165,27 @@ internal static class GeneratesMethodExecutionRuntime
     }
 
     /// <summary>
-    /// Resolves the abstractions assembly from the compilation references.
-    /// Handles both <see cref="PortableExecutableReference"/> (file-based) and
-    /// <see cref="CompilationReference"/> (in-memory, e.g., from Rider's code inspector).
+    /// Locates and invokes a static generator method in the loaded assembly.
     /// </summary>
-    private static (Assembly? assembly, string? error) ResolveAbstractionsAssembly(
-        LoadedAssemblyContext context,
-        Compilation compilation)
+    private static (object? result, string? error) InvokeStaticMethod(
+        Assembly assembly,
+        IMethodSymbol generatorMethod)
     {
-        MetadataReference[] abstractionsMatchingReferences = compilation.References.Where(reference =>
-                reference.Display is not null && (
-                    reference.Display.Equals(Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase)
-                    || (reference is PortableExecutableReference peRef && peRef.FilePath is not null &&
-                        Path.GetFileNameWithoutExtension(peRef.FilePath)
-                            .Equals(Consts.AbstractionsAssemblyName, StringComparison.OrdinalIgnoreCase))))
-            .ToArray();
-
-        if (abstractionsMatchingReferences.Length == 0)
+        string typeName = generatorMethod.ContainingType.ToDisplayString();
+        (Type? loadedType, string? typeError) = GeneratorAssemblyExecutor.FindType(assembly, typeName);
+        if (typeError != null)
         {
-            MetadataReference[] closestMatches = compilation.References.Where(reference =>
-                    reference.Display is not null
-                    && reference.Display.Contains(Consts.SolutionNamespace, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            string closestMatchesString = string.Join(", ", closestMatches.Select(reference => reference.Display));
-
-            return (null,
-                $"Could not find any reference matching '{Consts.AbstractionsAssemblyName}' in compilation references.\n" +
-                $" Found total references: {compilation.References.Count()}. \nMatching references: {closestMatches.Length}: \n{closestMatchesString}");
+            return (null, typeError);
         }
 
-        PortableExecutableReference[] peMatchingReferences =
-            abstractionsMatchingReferences.OfType<PortableExecutableReference>().ToArray();
-        CompilationReference[] csharpCompilationReference =
-            abstractionsMatchingReferences.OfType<CompilationReference>().ToArray();
-
-        if (peMatchingReferences.Length > 0)
+        (MethodInfo? methodInfo, string? methodError) =
+            GeneratorAssemblyExecutor.FindStaticMethod(loadedType!, generatorMethod.Name, typeName);
+        if (methodError != null)
         {
-            PortableExecutableReference abstractionsReference = peMatchingReferences.First();
-
-            if (string.IsNullOrEmpty(abstractionsReference.FilePath))
-            {
-                return (null,
-                    $"The reference matching '{Consts.AbstractionsAssemblyName}' does not have a valid file path.");
-            }
-
-            string abstractionsAssemblyPath =
-                GeneratorAssemblyExecutor.ResolveImplementationAssemblyPath(abstractionsReference.FilePath);
-            Assembly abstractionsAssembly = context.LoadContext.LoadFromAssemblyPath(abstractionsAssemblyPath);
-            return (abstractionsAssembly, null);
+            return (null, methodError);
         }
 
-        if (csharpCompilationReference.Length > 0)
-        {
-            if (context.CapturedAbstractionsAssembly != null)
-            {
-                return (context.CapturedAbstractionsAssembly, null);
-            }
-
-            if (context.CompilationReferenceBytes.TryGetValue(Consts.AbstractionsAssemblyName,
-                    out byte[]? abstractionBytes))
-            {
-                Assembly abstractionsAssembly =
-                    context.LoadContext.LoadFromStream(new MemoryStream(abstractionBytes));
-                return (abstractionsAssembly, null);
-            }
-
-            return (null,
-                $"Found reference matching '{Consts.AbstractionsAssemblyName}' as a CompilationReference, but failed to emit it to a loadable assembly.");
-        }
-
-        string matchesString = string.Join(", ",
-            abstractionsMatchingReferences.Select(reference =>
-                $"{reference.Display} (type: {reference.GetType().Name})"));
-        return (null,
-            $"Found references matching '{Consts.AbstractionsAssemblyName}' but none were PortableExecutableReference or CompilationReference with valid file paths. \nMatching references: {matchesString}");
-    }
-
-    /// <summary>
-    /// Sets up the <c>DataGeneratorsFactory</c> and assigns it to <c>Generate.CurrentGenerator</c>
-    /// in the loaded abstractions assembly, enabling fluent API usage during generator execution.
-    /// </summary>
-    private static string? SetupDataGeneratorsFactory(
-        Assembly executionAssembly,
-        Assembly abstractionsAssembly,
-        LoadedAssemblyContext context)
-    {
-        Type? generatorStaticType = abstractionsAssembly.GetType(Consts.GenerateTypeFullName);
-        Type? dataGeneratorsFactoryType = executionAssembly.GetType(Consts.DataGeneratorsFactoryTypeFullName);
-        if (generatorStaticType == null || dataGeneratorsFactoryType == null)
-        {
-            return
-                $"Could not find {Consts.GenerateTypeFullName} or {Consts.DataGeneratorsFactoryTypeFullName} types in compiled assembly";
-        }
-
-        object? dataGeneratorsFactory = Activator.CreateInstance(dataGeneratorsFactoryType);
-        PropertyInfo? currentGeneratorProperty = generatorStaticType.GetProperty(
-            Consts.CurrentGeneratorPropertyName, BindingFlags.NonPublic | BindingFlags.Static);
-        currentGeneratorProperty?.SetValue(null, dataGeneratorsFactory);
-
-        return null;
+        object? result = methodInfo!.Invoke(null, null);
+        return (result, null);
     }
 }
