@@ -42,39 +42,6 @@ public record DataMethodBodyBuilderStage4<TParam1, TReturnType>(BodyGenerationDa
 
     public IMethodBodyGenerator BodyReturningConstant(Func<TReturnType> constantValueFactory) =>
         new DataMethodBodyGenerator(Data with { ReturnConstantValueFactory = constantValueFactory });
-
-    public IMethodBodyGeneratorSwitchBody<TParam1, TReturnType> BodyWithSwitchStatement()
-        => throw new NotImplementedException(); //TODO: Remove explicit SwitchStatements with `for` and `constants`, like so:
-    /*
-        .ForMethod().WithReturnType<int>().WithParameter<int>()
-        .BodyWithSwitchStatement()
-        .ForCases(0, 1, 2, 300, 301, 302, 303).ReturnConstantValue(decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber))
-        .ForDefaultCase().UseProvidedBody(decimalNumber => SlowMath.CalculatePiDecimal(decimalNumber));
-
-        Will be replaced with:
-
-         .ForMethod().WithReturnType<int>().WithParameter<int>()
-         .WithCompileTimeConstants(() => new
-             {
-                PrecomputedTargets = new HashSet<int>(new int[] { 0, 1, 2, 300, 301, 302, 303 })
-             })
-         .UseProvidedBody(decimalNumber, constants =>
-            {
-                if (constants.PrecomputedTargets.Contains(decimalNumber)) return SlowMath.CalculatePiDecimal(decimalNumber);
-                else return SlowMath.CalculatePiDecimal(decimalNumber);
-            });
-
-        Or (in the case of PI), just simply:
-
-        .ForMethod().WithReturnType<int>().WithParameter<int>()
-        .UseProvidedBody(decimalNumber =>
-            {
-                var precomputedTargets = new HashSet<int>(new int[] { 0, 1, 2, 300, 301, 302, 303 })
-
-                if (precomputedTargets.Contains(decimalNumber)) return SlowMath.CalculatePiDecimal(decimalNumber);
-                else return SlowMath.CalculatePiDecimal(decimalNumber);
-            });
-     */
 }
 
 public record DataMethodBodyBuilderStage4NoArg<TReturnType>(BodyGenerationData Data) : IMethodBodyBuilderStage4NoArg<TReturnType>

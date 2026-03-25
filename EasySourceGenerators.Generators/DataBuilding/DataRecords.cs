@@ -6,5 +6,6 @@ public record BodyGenerationData(
     Type? ReturnType = null,
     Type[]? ParametersTypes = null,
     Delegate? RuntimeDelegateBody = null,
-    Delegate? ReturnConstantValueFactory = null
+    Delegate? ReturnConstantValueFactory = null,
+    object? CompileTimeConstants = null
     );
