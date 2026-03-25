@@ -9,6 +9,10 @@ using static EasySourceGenerators.Generators.Consts;
 
 namespace EasySourceGenerators.Generators.IncrementalGenerators;
 
+/// <summary>
+/// Represents a validated generation target: a generator method with its resolved
+/// target partial method and containing type information.
+/// </summary>
 internal sealed record GeneratesMethodGenerationTarget(
     MethodDeclarationSyntax Syntax,
     IMethodSymbol Symbol,
@@ -16,8 +20,17 @@ internal sealed record GeneratesMethodGenerationTarget(
     IMethodSymbol PartialMethod,
     INamedTypeSymbol ContainingType);
 
+/// <summary>
+/// Collects and validates generator methods marked with <c>[MethodBodyGenerator]</c>,
+/// resolving each to its target partial method and reporting diagnostics for invalid configurations.
+/// </summary>
 internal static class GeneratesMethodGenerationTargetCollector
 {
+    /// <summary>
+    /// Scans all generator methods, validates their configuration, and returns a list of
+    /// valid generation targets. Reports diagnostics for non-static generators (MSGH002)
+    /// and missing partial methods (MSGH001).
+    /// </summary>
     internal static List<GeneratesMethodGenerationTarget> Collect(
         SourceProductionContext context,
         ImmutableArray<MethodDeclarationSyntax?> generatorMethods,
