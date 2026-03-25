@@ -8,8 +8,16 @@ using static EasySourceGenerators.Generators.Consts;
 
 namespace EasySourceGenerators.Generators.IncrementalGenerators;
 
+/// <summary>
+/// Orchestrates the full source generation pipeline: collecting generation targets,
+/// grouping them by target method, and generating C# source for each group.
+/// </summary>
 internal static class GeneratesMethodGenerationPipeline
 {
+    /// <summary>
+    /// Executes the generation pipeline for all methods marked with the generator attribute.
+    /// Collects valid targets, groups by containing type and target method, then generates source.
+    /// </summary>
     internal static void Execute(
         SourceProductionContext context,
         ImmutableArray<MethodDeclarationSyntax?> generatorMethods,
@@ -42,6 +50,10 @@ internal static class GeneratesMethodGenerationPipeline
         }
     }
 
+    /// <summary>
+    /// Determines the generation pattern (fluent or simple) and generates source for a group
+    /// of generator methods targeting the same partial method.
+    /// </summary>
     private static string GenerateSourceForGroup(
         SourceProductionContext context,
         List<GeneratesMethodGenerationTarget> methods,
@@ -83,6 +95,10 @@ internal static class GeneratesMethodGenerationPipeline
         return GenerateFromSimplePattern(context, firstMethod, compilation);
     }
 
+    /// <summary>
+    /// Generates source code from a fluent body pattern, executing the generator method
+    /// and extracting the return value from the fluent API result.
+    /// </summary>
     private static string GenerateFromFluentBodyPattern(
         SourceProductionContext context,
         GeneratesMethodGenerationTarget methodInfo,
@@ -111,6 +127,10 @@ internal static class GeneratesMethodGenerationPipeline
             result!.ReturnValue);
     }
 
+    /// <summary>
+    /// Generates source code from a simple pattern, executing the generator method
+    /// and using its return value as the partial method's return expression.
+    /// </summary>
     private static string GenerateFromSimplePattern(
         SourceProductionContext context,
         GeneratesMethodGenerationTarget firstMethod,

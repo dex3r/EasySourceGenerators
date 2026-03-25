@@ -7,9 +7,17 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace EasySourceGenerators.Generators.IncrementalGenerators;
 
+/// <summary>
+/// Roslyn incremental source generator entry point. Detects methods marked with
+/// <c>[MethodBodyGenerator]</c> and delegates to <see cref="GeneratesMethodGenerationPipeline"/>
+/// for source code generation.
+/// </summary>
 [Generator]
 public sealed class GeneratesMethodGenerator : IIncrementalGenerator
 {
+    /// <summary>
+    /// Registers the syntax provider and source output for the incremental generator pipeline.
+    /// </summary>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValueProvider<ImmutableArray<MethodDeclarationSyntax?>> methodsWithAttribute = context.SyntaxProvider
