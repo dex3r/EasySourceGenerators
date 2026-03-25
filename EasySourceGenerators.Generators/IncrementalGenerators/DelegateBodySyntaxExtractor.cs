@@ -52,6 +52,7 @@ internal static class DelegateBodySyntaxExtractor
     /// <summary>
     /// Gets the return expression from a generator method. Handles both expression-body
     /// methods (<c>=&gt; expr</c>) and block-body methods (<c>{ return expr; }</c>).
+    /// Assumes the generator method has a simple structure with at most one return statement.
     /// </summary>
     private static ExpressionSyntax? GetReturnExpression(MethodDeclarationSyntax method)
     {
