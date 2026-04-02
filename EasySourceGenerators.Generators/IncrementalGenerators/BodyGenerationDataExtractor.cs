@@ -15,6 +15,8 @@ internal static class BodyGenerationDataExtractor
     /// Checks for <c>ReturnConstantValueFactory</c> first, then <c>RuntimeDelegateBody</c>.
     /// Returns a <see cref="FluentBodyResult"/> with the extracted value, or <c>null</c> return value
     /// if neither factory nor body are present.
+    /// Sets <see cref="FluentBodyResult.HasDelegateBody"/> when <c>RuntimeDelegateBody</c> is present,
+    /// indicating that the delegate body source code should be extracted from the syntax tree.
     /// </summary>
     internal static FluentBodyResult Extract(object methodResult, bool isVoidReturnType)
     {
@@ -26,13 +28,13 @@ internal static class BodyGenerationDataExtractor
         {
             // The method returned something that isn't a DataMethodBodyGenerator.
             // This may happen when the fluent chain is incomplete (e.g., user returned an intermediate builder).
-            return new FluentBodyResult(null, isVoidReturnType);
+            return new FluentBodyResult(null, isVoidReturnType, HasDelegateBody: false);
         }
 
         object? bodyGenerationData = dataProperty.GetValue(methodResult);
         if (bodyGenerationData == null)
         {
-            return new FluentBodyResult(null, isVoidReturnType);
+            return new FluentBodyResult(null, isVoidReturnType, HasDelegateBody: false);
         }
 
         Type dataType = bodyGenerationData.GetType();
@@ -40,11 +42,29 @@ internal static class BodyGenerationDataExtractor
         Type? dataReturnType = returnTypeProperty?.GetValue(bodyGenerationData) as Type;
         bool isVoid = dataReturnType == typeof(void);
 
+        bool hasDelegateBody = HasRuntimeDelegateBody(dataType, bodyGenerationData);
         object? compileTimeConstants = GetCompileTimeConstants(dataType, bodyGenerationData);
 
+        // When compile-time constants are present, the delegate body references a 'constants' parameter
+        // that doesn't exist in the generated method, so syntax extraction cannot be used.
+        if (compileTimeConstants != null)
+        {
+            hasDelegateBody = false;
+        }
+
         return TryExtractFromConstantFactory(dataType, bodyGenerationData, isVoid, compileTimeConstants)
-               ?? TryExtractFromRuntimeBody(dataType, bodyGenerationData, isVoid, compileTimeConstants)
-               ?? new FluentBodyResult(null, isVoid);
+               ?? TryExtractFromRuntimeBody(dataType, bodyGenerationData, isVoid, hasDelegateBody, compileTimeConstants)
+               ?? new FluentBodyResult(null, isVoid, hasDelegateBody);
+    }
+
+    /// <summary>
+    /// Checks whether <c>RuntimeDelegateBody</c> is set (non-null) in the body generation data.
+    /// </summary>
+    private static bool HasRuntimeDelegateBody(Type dataType, object bodyGenerationData)
+    {
+        PropertyInfo? runtimeBodyProperty = dataType.GetProperty("RuntimeDelegateBody");
+        Delegate? runtimeBody = runtimeBodyProperty?.GetValue(bodyGenerationData) as Delegate;
+        return runtimeBody != null;
     }
 
     /// <summary>
@@ -90,7 +110,7 @@ internal static class BodyGenerationDataExtractor
             return null;
         }
 
-        return new FluentBodyResult(constantValue?.ToString(), isVoid);
+        return new FluentBodyResult(constantValue?.ToString(), isVoid, HasDelegateBody: false);
     }
 
     /// <summary>
@@ -104,6 +124,7 @@ internal static class BodyGenerationDataExtractor
         Type dataType,
         object bodyGenerationData,
         bool isVoid,
+        bool hasDelegateBody,
         object? compileTimeConstants)
     {
         PropertyInfo? runtimeBodyProperty = dataType.GetProperty("RuntimeDelegateBody");
@@ -117,16 +138,16 @@ internal static class BodyGenerationDataExtractor
         if (bodyParams.Length == 0)
         {
             object? bodyResult = runtimeBody.DynamicInvoke();
-            return new FluentBodyResult(bodyResult?.ToString(), isVoid);
+            return new FluentBodyResult(bodyResult?.ToString(), isVoid, hasDelegateBody);
         }
 
         if (bodyParams.Length == 1 && compileTimeConstants != null)
         {
             object? bodyResult = runtimeBody.DynamicInvoke(compileTimeConstants);
-            return new FluentBodyResult(bodyResult?.ToString(), isVoid);
+            return new FluentBodyResult(bodyResult?.ToString(), isVoid, hasDelegateBody);
         }
 
         // For delegates with additional parameters, we can't invoke at compile time without values
-        return new FluentBodyResult(null, isVoid);
+        return new FluentBodyResult(null, isVoid, hasDelegateBody);
     }
 }
