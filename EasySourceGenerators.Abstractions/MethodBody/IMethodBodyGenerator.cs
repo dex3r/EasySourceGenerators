@@ -1,10 +1,15 @@
 ﻿namespace EasySourceGenerators.Abstractions;
 
-public interface IMethodBodyGenerator;
+/*
+ IMethodBodyGenerator implements IMethodGenerator, because method generating entire method will return IMethodBodyGenerator in the end.
+ 
+ [MethodGenerator]
+ IMethodGenerator SomeGenerator() =>
+     Generate.Method("GetAllColorsString")
+         .WithReturnType<string>().WithNoParameters()
+         .BodyReturningConstant(() => "placeholder"));
+*/
 
-//TODO: What? What did I had in mind writing that comment?
-/// <summary>
-/// <see cref="IMethodGenerator"/> implements <see cref="IMethodBodyGenerator"/> since fluent APIs that generate methods always returns
-/// with method body generators.
-/// </summary>
-public interface IMethodGenerator : IMethodBodyGenerator;
+public interface IMethodBodyGenerator : IMethodGenerator;
+
+public interface IMethodGenerator;

@@ -3,7 +3,7 @@ using EasySourceGenerators.Tests.Generation.Passing.Helpers;
 
 namespace EasySourceGenerators.Tests.Generation.Passing;
 
-public class Tests
+public class ColorsTests
 {
     [Test]
     public void ColorsClassLikeGenerator_ProducesExpectedRuntimeOutput()
@@ -33,13 +33,6 @@ public class Tests
 
         Assert.That(generatedCode, Is.EqualTo(expectedCode));
     }
-}
-
-public enum TestColorsEnum
-{
-    Red,
-    Green,
-    Blue
 }
 
 public partial class TestColorsClass
