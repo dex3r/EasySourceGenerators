@@ -1,9 +1,4 @@
-// SwitchCase/SwitchDefault attribute-based generation is commented out pending replacement with a data-driven approach.
-// See DataMethodBodyBuilders.cs for details on the planned replacement.
-
-/*
 using EasySourceGenerators.Abstractions;
-// ReSharper disable ConvertClosureToMethodGroup
 
 namespace EasySourceGenerators.Tests;
 
@@ -11,42 +6,26 @@ namespace EasySourceGenerators.Tests;
 public class PiExampleTests
 {
     [Test]
-    public void SwitchCaseAttribute_StoresArg1Value()
-    {
-        SwitchCase switchCase = new(arg1: 7);
-
-        Assert.That(switchCase.Arg1, Is.EqualTo(7));
-    }
-
-    [TestCase(0, 3)]
-    [TestCase(1, 1)]
-    [TestCase(2, 4)]
-    [TestCase(5, 9)]
-    public void PiExampleLikeGenerator_ProducesExpectedRuntimeOutput(int decimalNumber, int expectedDigit)
-    {
-        int result = TestPiClass.GetPiDecimal(decimalNumber);
-
-        Assert.That(result, Is.EqualTo(expectedDigit));
-    }
-
-    [Test]
     public void PiExampleLikeGenerator_ProducesExpectedGeneratedCode()
     {
-        string generatedCode = GeneratedCodeTestHelper.ReadGeneratedCode("TestPiClass_GetPiDecimal.g.cs");
+        string generatedCode = GeneratedCodeTestHelper.ReadGeneratedCode("TestPiExampleFluent_GetPiDecimal.g.cs");
+        
+        //TODO: The specifics here, like the formatting or where the "constants" is declared might be off here, but the general idea must be working
         string expectedCode = """
                               namespace EasySourceGenerators.Tests;
 
-                              static partial class TestPiClass
+                              static partial class TestPiExampleFluent
                               {
                                   public static partial int GetPiDecimal(int decimalNumber)
                                   {
-                                      switch (decimalNumber)
+                                      var constants = new
                                       {
-                                          case 0: return 3;
-                                          case 1: return 1;
-                                          case 2: return 4;
-                                          default: return TestSlowMath.CalculatePiDecimal(decimalNumber);
-                                      }
+                                          PrecomputedTargets = (new int[] { 0, 1, 2, 300, 301, 302, 303 }).ToDictionary(i => i, i => SlowMath.CalculatePiDecimal(i))
+                                      };
+                                      
+                                      if (constants.PrecomputedTargets.TryGetValue(decimalNumber, out int precomputedResult)) return precomputedResult;
+                                      
+                                      return SlowMath.CalculatePiDecimal(decimalNumber);
                                   }
                               }
                               """.ReplaceLineEndings("\n").TrimEnd();
@@ -55,19 +34,23 @@ public class PiExampleTests
     }
 }
 
-public static partial class TestPiClass
+public static partial class TestPiExampleFluent
 {
     public static partial int GetPiDecimal(int decimalNumber);
 
     [MethodBodyGenerator(nameof(GetPiDecimal))]
-    [SwitchCase(arg1: 0)]
-    [SwitchCase(arg1: 1)]
-    [SwitchCase(arg1: 2)]
-    static int GetPiDecimal_Generator_Specialized(int decimalNumber) =>
-        TestSlowMath.CalculatePiDecimal(decimalNumber);
-
-    [MethodBodyGenerator(nameof(GetPiDecimal))]
-    [SwitchDefault]
-    static Func<int, int> GetPiDecimal_Generator_Fallback() => decimalNumber => TestSlowMath.CalculatePiDecimal(decimalNumber);
+    static IMethodBodyGenerator GetPiDecimal_Generator() =>
+        Generate.MethodBody()
+            .ForMethod().WithReturnType<int>().WithParameter<int>()
+            .WithCompileTimeConstants(() => new
+            {
+                PrecomputedTargets = (new int[] { 0, 1, 2, 300, 301, 302, 303 }).ToDictionary(i => i, i => SlowMath.CalculatePiDecimal(i))
+            })
+            .UseProvidedBody((constants, decimalNumber) =>
+            {
+                if (constants.PrecomputedTargets.TryGetValue(decimalNumber, out int precomputedResult)) return precomputedResult;
+                
+                return SlowMath.CalculatePiDecimal(decimalNumber);
+            });
 }
-*/
+
